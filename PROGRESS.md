@@ -12,15 +12,77 @@ Canonical spec: `GChoPro-PRD.md`.
 - [x] M5: SIM health, alerts, compliance — issue [#5](https://github.com/mafzalkalwardev/gchopro/issues/5)
 - [x] M6: Translation — issue [#6](https://github.com/mafzalkalwardev/gchopro/issues/6)
 - [x] M7: Analytics and remaining features — issue [#7](https://github.com/mafzalkalwardev/gchopro/issues/7)
-- [ ] M8: Hardening, deployment, docs — issue [#8](https://github.com/mafzalkalwardev/gchopro/issues/8)
+- [x] M8: Hardening, deployment, docs — issue [#8](https://github.com/mafzalkalwardev/gchopro/issues/8). CI on `bf373f9` passed the lifecycle browser test, the backup restore, the production compose check, and the image build (2026-11-26).
 
 ## §22.2 acceptance
 
-Product checklists stay open. M0 only covers the repo-hygiene line inside Security:
+Checked boxes are assertions from the unit, integration, or browser suite on CI. Unchecked boxes are not asserted, so they stay open.
 
-- [ ] gitleaks is clean. `.env.example` has no values. Production containers run as non-root, and Postgres and Redis are not exposed.
+**Devices and multi-SIM**
 
-  Verified in M0: `.env.example` assignments are empty (`packages/core/src/env.test.ts`). gitleaks runs in CI and as a lefthook pre-commit hook. Production containers, closed ports, and the rest of this line are M8.
+- [x] The admin generates a pairing code. The simulated device registers with protocol v2. A protocol v1 register gets 426.
+- [x] A SIM report with 2 SIMs creates 2 `sims` rows. Re-reporting with a changed `subscriptionId` but the same slot, carrier and number reconciles to the same row.
+- [ ] Removing a SIM from the report marks it `inactive` and shows "line unavailable" to its user.
+- [ ] The capacity page shows slots, active, assigned and free correctly. User creation only offers free active SIMs.
+- [ ] Inbound messages with `subscriptionId` are routed to the user who owns that SIM. Unknown subscriptions go to the unroutable list and raise an alert.
+- [ ] Inbox dedupe is per `(device_id, provider_id)`. Two devices with the same `_ID` do not collide.
+- [ ] Token rotation works, with a 10-minute grace period for the old token. A retired device gets 401 `device_revoked`.
+
+**Users, sessions, subscriptions**
+
+- [x] The admin creates a user with a generated password, shown once. The first login forces a password change and AUP acceptance.
+- [ ] An admin password reset revokes all of the user's sessions. An open portal tab redirects to login within 5 s, the old cookie returns 401, and the old password fails.
+- [ ] Disabling a user or subscription, an expiry, or unassigning a SIM each revoke sessions with the correct reason message.
+- [x] Subscriptions by day, week, month and year compute `ends_at` correctly in the user's timezone. Pause and resume preserve the remaining time. Extend works from active and expired.
+- [x] The expiry reminder appears 3 days before (once). Expired users with `read_only` can log in but cannot send.
+- [x] Payments can be recorded and voided, and both are audit-logged.
+
+**Messaging and pacing**
+
+- [x] A one-to-one send creates the conversation and message, the paced dispatch, the device report, and status updates live in the thread.
+- [ ] A group send of N recipients creates N messages on the same SIM queue. Opted-out recipients are reported as blocked, and the cap on recipients is enforced.
+- [x] Consecutive dispatches on one SIM are separated by `base ± jitter` (never below the floor). Two SIMs dispatch independently.
+- [ ] Per-minute, per-hour and per-day caps and segments per day hold messages (or reject, per policy). Usage gauges reflect the counters.
+- [x] Messages queued outside the send window are held until it opens.
+- [ ] The kill switch (global, device, SIM) stops new dispatches within 2 s, and resuming continues in order.
+- [x] Transient failures retry at most twice on the **same SIM**. Suspension-signal and permanent failures never retry. No code path moves messages between SIMs.
+- [x] The segment counter matches the reference vectors for GSM-7, extension characters, UCS-2 and emoji.
+- [x] A scheduled send dispatches at or after the scheduled time, subject to every gate.
+- [x] Templates with variables render. Missing variables give 422.
+
+**SIM health and alerts**
+
+- [x] Failure names are classified per §14.2.
+- [x] 2 suspension signals in 24 h, or 3 consecutive failures in service, give `suspected_suspended`: the SIM queue is paused, the portal banner is shown, a critical alert is created, and an email and Telegram message are sent (mocked in tests).
+- [x] Resuming from `suspected_suspended` is only possible through a successful re-test. A failed re-test keeps the state.
+- [x] Device offline and battery-low alerts fire and auto-resolve. Dedupe prevents duplicates.
+
+**Translation**
+
+- [x] With zh→en enabled, a Chinese outbound message is sent in English (wire), stores the original, and the thread shows both through the toggle.
+- [x] An English inbound message is shown in Chinese, with the original available.
+- [x] A provider failure holds the outbound message, and after the timeout the user can send it untranslated explicitly.
+- [ ] The provider can be switched in Settings (DeepL, Google, LibreTranslate, none), with a test button.
+
+**Analytics**
+
+- [x] Per-user and per-SIM charts show sent, received, delivered, failed, delivery ratio and average delivery time for the chosen range.
+- [x] Re-test messages are excluded. CSV export is escaped against formula injection.
+
+**Security**
+
+- [ ] Admin access requires the allowlisted IP (others get 404), the correct host, and TOTP. Sudo mode is enforced for sensitive actions.
+- [x] Passwords are stored as argon2id. Lockout applies after 5 failures.
+- [ ] CSRF is rejected without the header or with a cross-origin `Origin`. The CSP header is present with a nonce, and no inline script runs.
+- [ ] Encrypted columns contain no plaintext (an integration test reads the raw DB). The blind index lookup works.
+- [ ] The audit log records every admin mutation, redaction is applied, and chain verification passes (and fails after tampering).
+- [x] gitleaks is clean. `.env.example` has no values. Production containers run as non-root, and Postgres and Redis are not exposed.
+
+**Compliance**
+
+- [x] STOP, 退订 and the other keywords create an opt-out, cancel pending messages to that number, optionally send one confirmation, and block future sends. START or 订阅 reverses keyword opt-outs.
+- [ ] Contacts require a consent source. CSV import rejects rows without one and flags opted-out numbers.
+- [ ] The signature is appended when enabled and counted in segments.
 
 ## Decisions
 
