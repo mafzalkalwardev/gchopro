@@ -1,0 +1,6 @@
+pre-commit:
+  commands:
+    lint-staged:
+      run: pnpm exec lint-staged --concurrent false
+    gitleaks:
+      run: gitleaks protect --staged --redact --no-banner

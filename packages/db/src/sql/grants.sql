@@ -1,0 +1,5 @@
+GRANT USAGE ON SCHEMA public TO gchopro_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO gchopro_app;
+REVOKE ALL ON TABLE audit_logs FROM gchopro_app;
+GRANT INSERT, SELECT ON TABLE audit_logs TO gchopro_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO gchopro_app;

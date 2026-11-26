@@ -1,0 +1,65 @@
+name: gchopro
+
+services:
+  postgres:
+    image: postgres:16@sha256:07abc3f43c9395b0bdbbab36bc25ddb0e8d83cd4fcafb5fb7d6abe14ff156dd8
+    environment:
+      POSTGRES_USER: gchopro_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: gchopro
+      GCHOPRO_APP_PASSWORD: ${GCHOPRO_APP_PASSWORD:?GCHOPRO_APP_PASSWORD is required}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gchopro_owner -d gchopro"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [gcho]
+
+  redis:
+    image: redis:7@sha256:6b645a37f49b0546582468706b32e71a8b7fbb5ba4583d0f9e27a8004716b738
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "${REDIS_PASSWORD:?REDIS_PASSWORD is required}",
+      ]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli -a "$$REDIS_PASSWORD" ping | grep PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [gcho]
+
+  mailpit:
+    image: axllent/mailpit@sha256:23a2ef85bc50853ab3093645d1d64679afd8887e89da5e48a88940c172591a4e
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    networks: [gcho]
+
+  libretranslate:
+    profiles: ["translate"]
+    image: libretranslate/libretranslate@sha256:cd587072f9aa48ab441311be673d8963777d6e2dd88eb987c269c88a0bc4a4b1
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks: [gcho]
+
+networks:
+  gcho:
+
+volumes:
+  pgdata:
+  redisdata:
