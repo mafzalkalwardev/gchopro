@@ -1,14 +1,23 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useSyncExternalStore } from "react";
 
 function csrfToken(): string {
   const row = document.cookie.split("; ").find((part) => part.startsWith("__Host-gcho_csrf="));
   return row === undefined ? "" : decodeURIComponent(row.slice("__Host-gcho_csrf=".length));
 }
 
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
+}
+
 export default function LoginPage() {
   const [message, setMessage] = useState("");
+  const hydrated = useHydrated();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,7 +39,11 @@ export default function LoginPage() {
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
       <h1 className="mt-3 font-display text-3xl">Admin sign-in</h1>
-      <form className="mt-6 grid max-w-sm gap-3" onSubmit={onSubmit}>
+      <form
+        className="mt-6 grid max-w-sm gap-3"
+        data-hydrated={hydrated ? "true" : "false"}
+        onSubmit={onSubmit}
+      >
         <label className="grid gap-1 font-body text-sm">
           Username
           <input

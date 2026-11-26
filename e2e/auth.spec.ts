@@ -9,7 +9,19 @@ test("admin authenticator, portal password change, and revocation under 5 second
   const demoPassword = process.env.SEED_DEMO_PASSWORD ?? "";
   const admin = await browser.newContext({ ignoreHTTPSErrors: true });
   const adminPage = await admin.newPage();
+  adminPage.on("console", (msg) => {
+    console.log(`admin console ${msg.type()}: ${msg.text()}`);
+  });
+  adminPage.on("pageerror", (error) => {
+    console.log(`admin pageerror: ${error.message}`);
+  });
+  adminPage.on("response", (response) => {
+    if (response.url().includes("/api/") || response.status() >= 400) {
+      console.log(`admin response ${response.status()} ${response.url()}`);
+    }
+  });
   await adminPage.goto("https://admin.localhost:3001/login");
+  await expect(adminPage.locator("form")).toHaveAttribute("data-hydrated", "true");
   await adminPage.getByLabel("Username").fill(process.env.SEED_ADMIN_USERNAME ?? "admin");
   await adminPage.getByLabel("Password").fill(adminPassword);
   await adminPage.getByRole("button", { name: "Sign in" }).click();
@@ -29,7 +41,14 @@ test("admin authenticator, portal password change, and revocation under 5 second
 
   const portal = await browser.newContext({ ignoreHTTPSErrors: true });
   const portalPage = await portal.newPage();
+  portalPage.on("console", (msg) => {
+    console.log(`portal console ${msg.type()}: ${msg.text()}`);
+  });
+  portalPage.on("pageerror", (error) => {
+    console.log(`portal pageerror: ${error.message}`);
+  });
   await portalPage.goto("https://portal.localhost:3000/login");
+  await expect(portalPage.locator("form")).toHaveAttribute("data-hydrated", "true");
   await portalPage.getByLabel("Username").fill("demo1");
   await portalPage.getByLabel("Password").fill(demoPassword);
   await portalPage.getByRole("button", { name: "Sign in" }).click();
