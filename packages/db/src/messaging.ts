@@ -1157,6 +1157,15 @@ export async function dueWork(limit = 100): Promise<{ id: string; simId: string 
     .limit(limit);
 }
 
+export async function dueRecent(limit = 20): Promise<{ id: string; simId: string }[]> {
+  return getDb()
+    .select({ id: messages.id, simId: messages.simId })
+    .from(messages)
+    .where(inArray(messages.status, ["queued", "held", "scheduled"]))
+    .orderBy(desc(messages.createdAt))
+    .limit(limit);
+}
+
 export async function holdUnhealthy(simId: string): Promise<void> {
   await getDb()
     .update(messages)

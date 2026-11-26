@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { appendFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   KILL_POLL_MS,
   createLogger,
@@ -10,6 +13,7 @@ import {
 import {
   claimTranslationJobs,
   deliverPendingAlerts,
+  dueRecent,
   dueWork,
   getDb,
   getRedis,
@@ -41,8 +45,22 @@ const lanes = new Map<string, Lane>();
 
 logger.info(redactForLog({ phase: "m8" }), "worker started");
 
+const tracePath = join(tmpdir(), "gchopro-e2e-worker.log");
+
+function trace(line: string): void {
+  if (process.env.E2E_TRACE !== "1") return;
+  appendFileSync(tracePath, `${new Date().toISOString()} ${line}\n`);
+}
+
+trace("worker started");
+
+const interestingIds = new Set<string>();
+
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
+  if (interestingIds.has(job.data.messageId)) {
+    trace(`processed ${job.data.messageId} ${result.kind}`);
+  }
   if (result.kind === "hold" || result.kind === "wait") {
     if (job.token === undefined) throw new Error("send job has no lock token");
     await job.moveToDelayed(Date.now() + result.delayMs, job.token);
@@ -72,27 +90,56 @@ async function pump(): Promise<void> {
     await laneFor(sim.simId, running);
     if (!sim.assignable) await holdUnhealthy(sim.simId);
   }
-  if (killed) return;
+  if (killed) {
+    trace("pump skipped because sending is paused");
+    return;
+  }
+  const recent = await dueRecent();
   const due = await dueWork();
-  for (const item of due) {
+  const seen = new Set<string>();
+  const ordered: { id: string; simId: string }[] = [];
+  for (const item of [...recent, ...due]) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    ordered.push(item);
+  }
+  interestingIds.clear();
+  for (const item of recent) interestingIds.add(item.id);
+  trace(
+    `pump recent=${recent.map((item) => item.id).join(",") || "none"} due=${due.length} sims=${runtime.length}`,
+  );
+  for (const item of ordered) {
+    const interesting = interestingIds.has(item.id);
     const sim = runtime.find((row) => row.simId === item.simId);
-    if (sim?.assignable !== true) continue;
+    if (sim?.assignable !== true) {
+      if (interesting) trace(`skip ${item.id}`);
+      continue;
+    }
     const lane = lanes.get(item.simId);
-    if (lane === undefined) continue;
+    if (lane === undefined) {
+      if (interesting) trace(`no lane ${item.id}`);
+      continue;
+    }
     try {
       const existing = await lane.queue.getJob(item.id);
       if (existing) {
         const state = await existing.getState();
         if (state === "failed" || state === "completed") await existing.remove();
-        else continue;
+        else {
+          if (interesting) trace(`existing ${item.id} ${state}`);
+          continue;
+        }
       }
       await lane.queue.add(
         "send",
         { messageId: item.id },
         { jobId: item.id, removeOnComplete: true, removeOnFail: 10 },
       );
-    } catch {
-      // The job is already waiting on this SIM queue.
+      if (interesting) trace(`enqueued ${item.id}`);
+    } catch (error) {
+      if (interesting) {
+        trace(`enqueue failed ${item.id} ${error instanceof Error ? error.message : "error"}`);
+      }
     }
   }
 }
@@ -118,17 +165,20 @@ async function watchKill(): Promise<void> {
 }
 
 void beat();
-void pump();
+function notePumpFailure(error: unknown): void {
+  trace(`pump failed ${error instanceof Error ? error.message : "error"}`);
+  logger.error(
+    { message: error instanceof Error ? error.message : "pump failed" },
+    "pacing pump failed",
+  );
+}
+
+void pump().catch(notePumpFailure);
 const subscriptions = setInterval(() => {
   void beat();
 }, 60_000);
 const pacing = setInterval(() => {
-  void pump().catch((error: unknown) => {
-    logger.error(
-      { message: error instanceof Error ? error.message : "pump failed" },
-      "pacing pump failed",
-    );
-  });
+  void pump().catch(notePumpFailure);
 }, 2000);
 const killWatch = setInterval(() => {
   void watchKill().catch(() => undefined);
