@@ -91,17 +91,19 @@ async function pollPending(
   match: (message: { id: string; body: string }) => boolean,
 ): Promise<string> {
   const deadline = Date.now() + 25_000;
+  let seen = "none";
   while (Date.now() < deadline) {
     const response = await request.get(`${gatewayBase}/api/devices/${deviceId}/pending`, {
       headers: { authorization: `Bearer ${token}`, "x-gateway-protocol": "2" },
     });
     await accepted(response, "pending");
     const body = (await response.json()) as { messages: { id: string; body: string }[] };
+    if (body.messages.length > 0) seen = body.messages.map((message) => message.body).join(", ");
     const found = body.messages.find(match);
     if (found !== undefined) return found.id;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  throw new Error("pending message did not arrive");
+  throw new Error(`pending message did not arrive (${seen})`);
 }
 
 async function compose(page: Page, to: string, body: string): Promise<void> {
@@ -272,6 +274,12 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     });
     await accepted(policy, "policy");
     const policyId = ((await policy.json()) as { data: { id: string } }).data.id;
+    await accepted(
+      await adminSend(adminPage, adminContext, "patch", `/api/admin/sims/${simId}`, {
+        rateLimitPolicyId: policyId,
+      }),
+      "sim policy",
+    );
     const created = await adminSend(adminPage, adminContext, "post", "/api/admin/users", {
       username,
       displayName: "Lifecycle line",
