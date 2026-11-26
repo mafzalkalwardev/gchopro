@@ -82,7 +82,7 @@ async function pump(): Promise<void> {
       await lane.queue.add(
         "send",
         { messageId: item.id },
-        { jobId: item.id, removeOnComplete: true, removeOnFail: true },
+        { jobId: item.id, removeOnComplete: true },
       );
     } catch {
       // The job is already waiting on this SIM queue.

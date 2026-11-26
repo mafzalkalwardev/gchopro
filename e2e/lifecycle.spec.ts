@@ -17,6 +17,7 @@ const opsPassword = process.env.SEED_OPS_PASSWORD ?? "";
 const opsNext = "gchopro-e2e-ops-pass";
 const userPassword = "gchopro-e2e-line-pass";
 const userNext = "gchopro-e2e-line-pass2";
+let statusPage: Page | null = null;
 
 function code(secret: string): string {
   return generateTOTP(decodeBase32IgnorePadding(secret), 30, 6);
@@ -103,7 +104,12 @@ async function pollPending(
     if (found !== undefined) return found.id;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  throw new Error(`pending message did not arrive (${seen})`);
+  let pageText = "";
+  if (statusPage !== null) {
+    await statusPage.reload();
+    pageText = (await statusPage.locator("body").innerText()).replace(/\s+/g, " ").slice(0, 400);
+  }
+  throw new Error(`pending message did not arrive (${seen}) | ${pageText}`);
 }
 
 async function compose(page: Page, to: string, body: string): Promise<void> {
@@ -129,6 +135,7 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
   const portalContext = await browser.newContext({ ignoreHTTPSErrors: true });
   const adminPage = await adminContext.newPage();
   const portalPage = await portalContext.newPage();
+  statusPage = portalPage;
   adminPage.setDefaultTimeout(20_000);
   adminPage.setDefaultNavigationTimeout(20_000);
   portalPage.setDefaultTimeout(20_000);
@@ -445,20 +452,12 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     for (const mark of ["one", "two"]) {
       await compose(portalPage, limited, `limit ${mark}`);
       await portalPage.waitForURL("**/c/**");
-      let id: string;
-      try {
-        id = await pollPending(
-          request,
-          device.id,
-          device.token,
-          (message) => message.body === `limit ${mark}`,
-        );
-      } catch (error) {
-        await portalPage.reload();
-        const text = (await portalPage.locator("body").innerText()).slice(0, 500);
-        const reason = error instanceof Error ? error.message : "pending message did not arrive";
-        throw new Error(`${reason} | page: ${text}`);
-      }
+      const id = await pollPending(
+        request,
+        device.id,
+        device.token,
+        (message) => message.body === `limit ${mark}`,
+      );
       await accepted(
         await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
           headers,

@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { applySignature, countSegments, hashPassword } from "@gchopro/core";
-import { and, asc, eq, inArray, like, or } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { afterAll, describe, expect, it } from "vitest";
@@ -319,26 +319,6 @@ describe("acceptance gaps", () => {
       .update(settings)
       .set({ value: NONE_TRANSLATION })
       .where(eq(settings.key, "translation"));
-    const owners = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(
-        or(like(users.username, "gu%"), like(users.username, "gt%"), like(users.username, "gcap%")),
-      );
-    if (owners.length > 0) {
-      await db
-        .update(messages)
-        .set({ status: "sent", leaseExpiresAt: new Date(0), holdReason: null })
-        .where(
-          and(
-            inArray(
-              messages.userId,
-              owners.map((owner) => owner.id),
-            ),
-            inArray(messages.status, ["queued", "held", "scheduled", "dispatched"]),
-          ),
-        );
-    }
     await closeDb();
     await closeRedis();
   });
