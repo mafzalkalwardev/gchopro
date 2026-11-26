@@ -135,7 +135,7 @@ export function retryPlan(input: {
 }
 
 export function simQueueName(simId: string): string {
-  return `send:sim:${simId}`;
+  return `send-sim-${simId}`;
 }
 
 export const KILL_POLL_MS = 500;

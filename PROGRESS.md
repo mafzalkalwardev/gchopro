@@ -91,6 +91,7 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-26 — The first production admin is seeded with `APP_ENV=staging`. Seed still refuses `APP_ENV=production`. Demo users stay limited to development. `GET /healthz` is answered by middleware before the host and admin IP checks so a container can probe `127.0.0.1`. Caddy still applies the admin allowlist before a request reaches the admin app.
 - 2026-11-26 — One image builds the workspace and runs `next start` and `tsx src/migrate.ts`. Migrate stays on source because the compiled path does not find the SQL files. Caddy is `caddy:2.10` without a digest pin.
 - 2026-11-26 — Playwright runs one worker. The lifecycle test signs in as `ops`, seeded only when `SEED_OPS_PASSWORD` is set, so it does not share the admin or demo1 password with the auth test.
+- 2026-11-26 — BullMQ 6 rejects a colon in a queue name. Each SIM still has its own queue at concurrency 1. The name is `send-sim-{id}` rather than `send:sim:{id}`. Jobs are still never moved to another SIM.
 
 ## Deviations (approved)
 
