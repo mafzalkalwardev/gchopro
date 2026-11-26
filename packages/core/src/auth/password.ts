@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { hash, verify } from "@node-rs/argon2";
 import { generateRandomString } from "@oslojs/crypto/random";
 
 const ARGON = {
@@ -10,6 +9,24 @@ const ARGON = {
   parallelism: 1,
   algorithm: 2, // Argon2id. The library enum is const and cannot be imported under verbatimModuleSyntax.
 } as const;
+
+type Argon2Module = {
+  hash: (password: string, options: typeof ARGON) => Promise<string>;
+  verify: (encoded: string, password: string, options: typeof ARGON) => Promise<boolean>;
+};
+
+/**
+ * The native binding is loaded by Node at call time. A static import makes
+ * Next's bundler parse the `.node` files and fail the production build.
+ */
+async function argon2(): Promise<Argon2Module> {
+  const loaded = (await import(/* webpackIgnore: true */ "@node-rs/argon2")) as Argon2Module & {
+    default?: Argon2Module;
+  };
+  if (typeof loaded.hash === "function") return loaded;
+  if (loaded.default && typeof loaded.default.hash === "function") return loaded.default;
+  throw new Error("argon2 binding did not load");
+}
 
 const PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 const MAX_PASSWORD_LENGTH = 128;
@@ -34,7 +51,8 @@ function commonPasswords(): Set<string> {
   return common;
 }
 
-export function hashPassword(password: string): Promise<string> {
+export async function hashPassword(password: string): Promise<string> {
+  const { hash } = await argon2();
   return hash(password, ARGON);
 }
 
@@ -44,6 +62,7 @@ export function dummyPasswordHash(): Promise<string> {
 }
 
 export async function verifyPassword(encoded: string, password: string): Promise<boolean> {
+  const { verify } = await argon2();
   return verify(encoded, password, ARGON);
 }
 
