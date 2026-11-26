@@ -79,6 +79,8 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-25 — The worker sweeps device alerts and delivers pending notifications every 30 seconds. CI does not start the worker. Tests inject the mail and Telegram transport. Alert text is the title and type only. A critical alert can be sent again after 60 minutes. A warning is sent once.
 - 2026-11-25 — Re-test numbers are `ADMIN_TEST_NUMBERS` plus `settings.test_numbers`. Email is sent only when `SMTP_HOST` and `SMTP_FROM` are set. Telegram uses `TELEGRAM_BOT_TOKEN`.
 - 2026-11-25 — The §19.4 policy sentence is in the admin and portal footers. Translation providers, analytics, and retention purge stay in later milestones.
+- 2026-11-25 — Outbound translation stores the typed text and replaces the wire body after the provider returns. The signature is appended to that translation. A provider failure stays held until the three-minute gate, and the user can then send the original on purpose. `none` turns translation off for every user.
+- 2026-11-25 — The worker keeps a BullMQ `translate` queue at concurrency 4. Each job tries the provider three times. CI does not start the worker. Tests inject the provider, so no live DeepL, Google, or LibreTranslate call runs in CI. The optional Compose profile `translate` is unchanged.
 
 ## Deviations (approved)
 
@@ -86,4 +88,4 @@ None.
 
 ## Known issues
 
-- Docker is not installed on the machine that built M0 through M5. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M5 opt-out, alert, and settings screens were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the existing browser sign-in test.
+- Docker is not installed on the machine that built M0 through M6. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M6 translation preview, thread toggle, and provider test were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the existing browser sign-in test.

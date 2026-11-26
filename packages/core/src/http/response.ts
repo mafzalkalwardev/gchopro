@@ -25,6 +25,7 @@ export const SAFE_TEXT = {
   line_unavailable: "The assigned line is not available.",
   kill_switch: "Sending is paused.",
   missing_variables: "This template is missing values.",
+  translation_unavailable: "Translation is unavailable right now.",
 } as const;
 
 export class AppError extends Error {

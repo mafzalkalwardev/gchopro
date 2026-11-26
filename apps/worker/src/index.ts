@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { KILL_POLL_MS, createLogger, loadEnv, redactForLog, simQueueName } from "@gchopro/core";
 import {
+  claimTranslationJobs,
   deliverPendingAlerts,
   dueWork,
   getDb,
@@ -12,6 +13,7 @@ import {
   sweepDeviceAlerts,
   sweepLeases,
   tickSubscriptions,
+  translateQueued,
 } from "@gchopro/db";
 import { DelayedError, Queue, Worker, type Job } from "bullmq";
 
@@ -24,7 +26,7 @@ type Lane = { queue: Queue; worker: Worker };
 
 const lanes = new Map<string, Lane>();
 
-logger.info(redactForLog({ phase: "m5" }), "worker started");
+logger.info(redactForLog({ phase: "m6" }), "worker started");
 
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
@@ -117,7 +119,33 @@ async function watchHealth(): Promise<void> {
   await deliverPendingAlerts();
 }
 
+const translateQueue = new Queue("translate", { connection });
+const translateWorker = new Worker(
+  "translate",
+  async (job: Job<{ messageId: string; role: "outbound_original" | "inbound_display" }>) => {
+    await translateQueued(job.data.messageId, job.data.role);
+  },
+  { connection, concurrency: 4 },
+);
+
+async function watchTranslations(): Promise<void> {
+  const jobs = await claimTranslationJobs(20);
+  for (const job of jobs) {
+    try {
+      await translateQueue.add("translate", job, {
+        jobId: `${job.role}:${job.messageId}`,
+        removeOnComplete: true,
+        removeOnFail: true,
+        attempts: 1,
+      });
+    } catch {
+      // This message is already waiting on the translate queue.
+    }
+  }
+}
+
 void watchHealth();
+void watchTranslations();
 const healthWatch = setInterval(() => {
   void watchHealth().catch((error: unknown) => {
     logger.error(
@@ -126,12 +154,23 @@ const healthWatch = setInterval(() => {
     );
   });
 }, 30_000);
+const translationWatch = setInterval(() => {
+  void watchTranslations().catch((error: unknown) => {
+    logger.error(
+      { message: error instanceof Error ? error.message : "translation sweep failed" },
+      "translation sweep failed",
+    );
+  });
+}, 2000);
 
 function stop(signal: string): void {
   clearInterval(subscriptions);
   clearInterval(pacing);
   clearInterval(killWatch);
   clearInterval(healthWatch);
+  clearInterval(translationWatch);
+  void translateWorker.close();
+  void translateQueue.close();
   logger.info({ signal }, "worker stopping");
   process.exit(0);
 }

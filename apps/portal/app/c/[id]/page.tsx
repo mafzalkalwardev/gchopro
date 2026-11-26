@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { COOKIE } from "@gchopro/core";
 import { listPortalNotices, listPortalTemplates, listThread } from "@gchopro/db";
 import { PortalNav, requirePortal } from "@/lib/gate";
-import { Composer, CancelButton } from "../../composer";
+import { Composer, CancelButton, SendOriginal, TranslationToggle } from "../../composer";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,16 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
               {message.holdReason ? ` · ${message.holdReason}` : ""}
               {message.blockReason ? ` · ${message.blockReason}` : ""}
             </p>
-            <p className="mt-2 whitespace-pre-wrap font-body">{message.body}</p>
+            <TranslationToggle
+              original={message.original}
+              translated={message.translated}
+              preferred={message.preferred}
+              unavailable={message.translationUnavailable}
+            />
+            {message.failureName === "TRANSLATION_TIMEOUT" ||
+            message.failureName === "TRANSLATION_TOO_LONG" ? (
+              <SendOriginal id={message.id} />
+            ) : null}
             {message.status === "queued" ||
             message.status === "held" ||
             message.status === "scheduled" ? (

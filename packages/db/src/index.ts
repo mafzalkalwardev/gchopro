@@ -59,6 +59,12 @@ export {
 } from "./device-service.js";
 export { applyStatusReports, ingestInbox, pendingWork } from "./device-messages.js";
 export {
+  claimTranslationJobs,
+  sendUntranslated,
+  testTranslationProvider,
+  translateQueued,
+} from "./translation-service.js";
+export {
   assignUserSim,
   createNotice,
   createSubscription,

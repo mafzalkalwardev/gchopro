@@ -1,4 +1,4 @@
-import { COOKIE, POLICY_TEXT, settingSchemas } from "@gchopro/core";
+import { COOKIE, POLICY_TEXT, loadEnv, settingSchemas } from "@gchopro/core";
 import { listSettings } from "@gchopro/db";
 import { cookies } from "next/headers";
 import { BenchNav, requireDesk } from "@/lib/desk";
@@ -48,6 +48,16 @@ export default async function SettingsPage() {
   const keywords = settingSchemas.opt_out_keywords.safeParse(values.get("opt_out_keywords"));
   const optIn = settingSchemas.opt_in_keywords.safeParse(values.get("opt_in_keywords"));
   const tests = settingSchemas.test_numbers.safeParse(values.get("test_numbers"));
+  const translation = settingSchemas.translation.parse(
+    values.get("translation") ?? {
+      provider: "none",
+      deepl: { plan: "free" },
+      google: {},
+      libretranslate: { url: null },
+      preview_before_send: true,
+    },
+  );
+  const env = loadEnv();
   return (
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
@@ -70,6 +80,20 @@ export default async function SettingsPage() {
             emailTo: stringList(email?.get("to")),
             telegramEnabled: telegram?.get("enabled") === true,
             chatId: typeof chatId === "string" ? chatId : "",
+          }}
+          translation={{
+            provider: translation.provider,
+            preview: translation.preview_before_send,
+            deeplPlan: translation.deepl.plan ?? "free",
+            libreUrl: translation.libretranslate.url ?? "",
+            deeplConfigured: env.DEEPL_API_KEY !== undefined,
+            googleConfigured:
+              env.GOOGLE_CLOUD_PROJECT !== undefined &&
+              env.GOOGLE_TRANSLATE_CREDENTIALS_JSON !== undefined,
+            libreConfigured:
+              (translation.libretranslate.url !== null &&
+                translation.libretranslate.url.length > 0) ||
+              env.LIBRETRANSLATE_URL !== undefined,
           }}
         />
       </section>
