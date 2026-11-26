@@ -61,6 +61,7 @@ async function adminSend(
 function translateMock(): Promise<{ server: Server; url: string }> {
   return new Promise((resolve) => {
     const server = createServer((req, res) => {
+      console.log(`mock ${req.method ?? ""} ${req.url ?? ""}`);
       if (req.url === "/languages") {
         res.setHeader("content-type", "application/json");
         res.end(JSON.stringify([{ code: "en" }, { code: "zh" }]));

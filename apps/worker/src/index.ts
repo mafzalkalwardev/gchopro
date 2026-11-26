@@ -170,13 +170,15 @@ const translateQueue = new Queue("translate", { connection });
 const translateWorker = new Worker(
   "translate",
   async (job: Job<{ messageId: string; role: "outbound_original" | "inbound_display" }>) => {
-    await translateQueued(job.data.messageId, job.data.role);
+    const result = await translateQueued(job.data.messageId, job.data.role);
+    process.stderr.write(`translate ${job.data.role} ${result}\n`);
   },
   { connection, concurrency: 4 },
 );
 
 async function watchTranslations(): Promise<void> {
   const jobs = await claimTranslationJobs(20);
+  if (jobs.length > 0) process.stderr.write(`translate claimed ${String(jobs.length)}\n`);
   for (const job of jobs) {
     try {
       await translateQueue.add("translate", job, {
