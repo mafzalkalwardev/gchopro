@@ -183,6 +183,24 @@ const admin = (
 )[0];
 if (admin === undefined) throw new Error("Admin user was not seeded");
 
+const opsPassword = process.env.SEED_OPS_PASSWORD;
+if (opsPassword !== undefined && opsPassword.length >= 16) {
+  await db
+    .insert(users)
+    .values({
+      id: uuidv7(),
+      role: "admin",
+      username: "ops",
+      displayName: "Operations",
+      passwordHash: await hashPassword(opsPassword),
+      passwordChangedAt: now,
+      mustChangePassword: true,
+      totpEnabled: false,
+      timezone: "Asia/Karachi",
+    })
+    .onConflictDoNothing();
+}
+
 await db
   .insert(templates)
   .values([

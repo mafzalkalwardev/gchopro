@@ -54,7 +54,9 @@ async function openAlert(input: {
     | "sim_suspected_suspended"
     | "sim_state_change"
     | "kill_switch_changed"
-    | "translation_provider_error";
+    | "translation_provider_error"
+    | "backup_failed"
+    | "backup_restore_test";
   severity: AlertSeverity;
   title: string;
   dedupeKey: string;
@@ -87,6 +89,19 @@ async function openAlert(input: {
       dedupeKey: input.dedupeKey,
       notifiedChannels: [],
     });
+}
+
+export async function raiseOpsAlert(input: {
+  type: "backup_failed" | "backup_restore_test";
+  severity: AlertSeverity;
+  title: string;
+  dedupeKey: string;
+}): Promise<void> {
+  await openAlert(input);
+}
+
+export async function resolveOpsAlert(dedupeKey: string): Promise<void> {
+  await resolveAlert(dedupeKey);
 }
 
 async function resolveAlert(dedupeKey: string): Promise<void> {

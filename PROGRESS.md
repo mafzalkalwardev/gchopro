@@ -84,6 +84,13 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-26 — `stats:rollup` runs every 5 minutes inside the worker and rewrites today and yesterday in `stats_daily`. Re-test rows are left out. CI does not start the worker, so the analytics test calls the rollup directly.
 - 2026-11-26 — Interface language is a `gcho_locale` cookie and the en / zh-CN catalog in `@gchopro/core/i18n`. Dark mode swaps the ink and paper tokens from a `gcho_theme` cookie. Web push stays off; a new message can play a sound or raise an in-tab notification. Backup jobs stay in M8, so system health shows that none has been recorded.
 - 2026-11-26 — The portal is installable when the manifest, 192 and 512 icons, and a fetch-handling service worker are present. CI checks those. A full Lighthouse score is not a CI job.
+- 2026-11-26 — Retention nulls message bodies and translations older than `settings.retention.message_body_days`, and clears conversation previews whose last message is older than that cutoff. Metadata stays. An admin sudo action anonymizes one portal user's messages, contacts, and group names without deleting the user row.
+- 2026-11-26 — Backups are age-encrypted custom dumps copied with rclone. Redis is not backed up. The worker runs them only when `BACKUP_ENABLED=true`. The schedule is Asia/Karachi: backup during the 02:00 hour, retention during the 03:00 hour, and the restore test during the Sunday 04:00 hour. A Redis lock runs each job once per day. CI calls the scripts itself because the CI worker leaves `BACKUP_ENABLED` unset.
+- 2026-11-26 — A re-test is the only send accepted while a SIM is `suspected_suspended`. It stays on that SIM. The worker lane stays open so the re-test can dispatch. Ordinary messages on that SIM are still held. This is the recovery path. It does not move a blocked SIM's messages.
+- 2026-11-26 — Production TLS is the Caddyfile. There is no rate-limit plugin. The admin allowlist is comma-separated in the env file and space-separated in Caddy. A public SSL Labs grade was not scanned.
+- 2026-11-26 — The first production admin is seeded with `APP_ENV=staging`. Seed still refuses `APP_ENV=production`. Demo users stay limited to development. `GET /healthz` is answered by middleware before the host and admin IP checks so a container can probe `127.0.0.1`. Caddy still applies the admin allowlist before a request reaches the admin app.
+- 2026-11-26 — One image builds the workspace and runs `next start` and `tsx src/migrate.ts`. Migrate stays on source because the compiled path does not find the SQL files. Caddy is `caddy:2.10` without a digest pin.
+- 2026-11-26 — Playwright runs one worker. The lifecycle test signs in as `ops`, seeded only when `SEED_OPS_PASSWORD` is set, so it does not share the admin or demo1 password with the auth test.
 
 ## Deviations (approved)
 
@@ -91,4 +98,4 @@ None.
 
 ## Known issues
 
-- Docker is not installed on the machine that built M0 through M7. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M7 analytics, usage chart, inbox filters, support view, and system health screens were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the browser sign-in test.
+- Docker is not installed on the machine that built M0 through M8. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M7 analytics, usage chart, inbox filters, support view, and system health screens were not clicked in a local browser. The M8 delete-data button and the backup line on system health were not clicked either. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests, the browser tests, the backup restore, and the production image build. A public SSL Labs grade was not scanned, and a real phone was not used.

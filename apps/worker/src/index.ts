@@ -1,16 +1,27 @@
 import { randomUUID } from "node:crypto";
-import { KILL_POLL_MS, createLogger, loadEnv, redactForLog, simQueueName } from "@gchopro/core";
+import {
+  KILL_POLL_MS,
+  createLogger,
+  loadEnv,
+  maintenanceDue,
+  redactForLog,
+  simQueueName,
+} from "@gchopro/core";
 import {
   claimTranslationJobs,
   deliverPendingAlerts,
   dueWork,
   getDb,
+  getRedis,
   holdUnhealthy,
   killSwitchOn,
   processSend,
   promoteScheduled,
+  purgeRetention,
   recordWorkerBeat,
   rollupStats,
+  runBackupJob,
+  runRestoreTest,
   simRuntime,
   sweepDeviceAlerts,
   sweepLeases,
@@ -28,7 +39,7 @@ type Lane = { queue: Queue; worker: Worker };
 
 const lanes = new Map<string, Lane>();
 
-logger.info(redactForLog({ phase: "m7" }), "worker started");
+logger.info(redactForLog({ phase: "m8" }), "worker started");
 
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
@@ -126,6 +137,34 @@ async function watchStats(): Promise<void> {
   await rollupStats();
 }
 
+async function onceToday(kind: string, day: string, task: () => Promise<void>): Promise<void> {
+  const key = `ops:${kind}:${day}`;
+  const claimed = await getRedis().set(key, "1", "EX", 172_800, "NX");
+  if (claimed !== "OK") return;
+  try {
+    await task();
+  } catch (error) {
+    await getRedis().del(key);
+    throw error;
+  }
+}
+
+async function watchMaintenance(): Promise<void> {
+  const due = maintenanceDue(new Date(), "Asia/Karachi");
+  if (due.retention)
+    await onceToday("retention", due.day, async () => {
+      await purgeRetention();
+    });
+  if (due.backup)
+    await onceToday("backup", due.day, async () => {
+      await runBackupJob();
+    });
+  if (due.restoreTest)
+    await onceToday("restore", due.day, async () => {
+      await runRestoreTest();
+    });
+}
+
 const translateQueue = new Queue("translate", { connection });
 const translateWorker = new Worker(
   "translate",
@@ -154,6 +193,7 @@ async function watchTranslations(): Promise<void> {
 void watchHealth();
 void watchTranslations();
 void watchStats();
+void watchMaintenance();
 const healthWatch = setInterval(() => {
   void watchHealth().catch((error: unknown) => {
     logger.error(
@@ -178,6 +218,14 @@ const statsWatch = setInterval(() => {
     );
   });
 }, 300_000);
+const maintenanceWatch = setInterval(() => {
+  void watchMaintenance().catch((error: unknown) => {
+    logger.error(
+      { message: error instanceof Error ? error.message : "maintenance failed" },
+      "maintenance failed",
+    );
+  });
+}, 60_000);
 
 function stop(signal: string): void {
   clearInterval(subscriptions);
@@ -186,6 +234,7 @@ function stop(signal: string): void {
   clearInterval(healthWatch);
   clearInterval(translationWatch);
   clearInterval(statsWatch);
+  clearInterval(maintenanceWatch);
   void translateWorker.close();
   void translateQueue.close();
   logger.info({ signal }, "worker stopping");

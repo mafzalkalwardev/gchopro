@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { screenCopy } from "@gchopro/core/i18n";
+import { useLocale } from "@/lib/locale";
 
 function csrf(): string {
   const row = document.cookie.split("; ").find((part) => part.startsWith("__Host-gcho_csrf="));
@@ -20,6 +22,7 @@ export function UserActions({
   subscriptionId: string | null;
   sims: SimOption[];
 }) {
+  const locale = useLocale();
   const [message, setMessage] = useState("");
   const [password, setPassword] = useState("");
 
@@ -144,6 +147,12 @@ export function UserActions({
               setMessage("Sudo was not granted.");
               return;
             }
+            const intent = (event.nativeEvent as SubmitEvent).submitter?.getAttribute("value");
+            if (intent === "delete") {
+              if (!window.confirm("Delete this user's message data? The account stays.")) return;
+              await send(`/api/admin/users/${userId}/delete-data`, {});
+              return;
+            }
             if (!window.confirm("Reset this password and sign the user out?")) return;
             await send(`/api/admin/users/${userId}/reset-password`, {});
           })();
@@ -168,9 +177,14 @@ export function UserActions({
             required
           />
         </label>
-        <button className="mt-2 bg-ink px-3 py-2 font-body text-paper" type="submit">
-          Reset password
-        </button>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button className="bg-ink px-3 py-2 font-body text-paper" type="submit" value="reset">
+            Reset password
+          </button>
+          <button className="border border-ink px-3 py-2 font-body" type="submit" value="delete">
+            {screenCopy(locale, "delete_data")}
+          </button>
+        </div>
       </form>
       {password.length > 0 ? (
         <p className="font-body text-sm">

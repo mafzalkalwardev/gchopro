@@ -94,6 +94,7 @@ const en = {
   show: "Show",
   english: "English",
   chinese: "中文",
+  delete_data: "Delete message data",
 } as const;
 
 const zh = {
@@ -190,6 +191,7 @@ const zh = {
   show: "显示",
   english: "English",
   chinese: "中文",
+  delete_data: "删除消息数据",
 } as const;
 
 export type ScreenId = keyof typeof en;

@@ -27,7 +27,11 @@ export default async function SystemPage() {
           </div>
           <div>
             <dt className="font-mono text-xs uppercase">Backup</dt>
-            <dd>No backup has been recorded.</dd>
+            <dd>
+              {health.backup.lastAt === null
+                ? "No backup has been recorded."
+                : `Last backup ${health.backup.lastAt}. Restore test ${health.backup.restoreTestAt ?? "not recorded"}.`}
+            </dd>
           </div>
         </dl>
         <ul className="mt-8 max-w-lg font-mono text-sm">
