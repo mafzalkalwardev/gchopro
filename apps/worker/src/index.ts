@@ -10,7 +10,7 @@ import {
 import {
   claimTranslationJobs,
   deliverPendingAlerts,
-  dueWork,
+  dueHeads,
   getDb,
   getRedis,
   holdUnhealthy,
@@ -73,12 +73,8 @@ async function pump(): Promise<void> {
     if (!sim.assignable) await holdUnhealthy(sim.simId);
   }
   if (killed) return;
-  // Oldest first on each SIM. A backed-up line does not take every slot.
-  const due = await dueWork(1000);
-  const started = new Set<string>();
+  const due = await dueHeads();
   for (const item of due) {
-    if (started.has(item.simId)) continue;
-    started.add(item.simId);
     const sim = runtime.find((row) => row.simId === item.simId);
     if (sim?.assignable !== true) continue;
     const lane = lanes.get(item.simId);

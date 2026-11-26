@@ -110,6 +110,7 @@ export {
 export {
   cancelGroup,
   cancelMessage,
+  dueHeads,
   dueWork,
   exportMessages,
   groupProgress,
