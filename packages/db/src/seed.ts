@@ -184,6 +184,7 @@ const admin = (
 if (admin === undefined) throw new Error("Admin user was not seeded");
 
 const opsPassword = process.env.SEED_OPS_PASSWORD;
+console.log(`ops seed ${opsPassword === undefined ? "missing" : String(opsPassword.length)}`);
 if (opsPassword !== undefined && opsPassword.length >= 16) {
   await db
     .insert(users)

@@ -112,6 +112,20 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
   const portalContext = await browser.newContext({ ignoreHTTPSErrors: true });
   const adminPage = await adminContext.newPage();
   const portalPage = await portalContext.newPage();
+  adminPage.setDefaultTimeout(20_000);
+  adminPage.setDefaultNavigationTimeout(20_000);
+  portalPage.setDefaultTimeout(20_000);
+  portalPage.setDefaultNavigationTimeout(20_000);
+  adminPage.on("response", (response) => {
+    if (response.url().includes("/api/") || response.status() >= 400) {
+      console.log(`lifecycle admin ${response.status()} ${response.url()}`);
+    }
+  });
+  portalPage.on("response", (response) => {
+    if (response.url().includes("/api/") || response.status() >= 400) {
+      console.log(`lifecycle portal ${response.status()} ${response.url()}`);
+    }
+  });
   const stamp = randomBytes(3).toString("hex");
   const username = `line${stamp}`;
   const peer = "+923009991803";
@@ -135,8 +149,14 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     await expect(adminPage.locator("form")).toHaveAttribute("data-hydrated", "true");
     await adminPage.getByLabel("Username").fill("ops");
     await adminPage.getByLabel("Password").fill(opsPassword);
+    console.log(`ops password length ${opsPassword.length}`);
     await adminPage.getByRole("button", { name: "Sign in" }).click();
-    await adminPage.waitForURL("**/totp");
+    const rejected = adminPage.locator("p.text-signal");
+    const landed = await Promise.race([
+      adminPage.waitForURL("**/totp").then(() => "totp" as const),
+      rejected.waitFor().then(() => "rejected" as const),
+    ]);
+    if (landed === "rejected") throw new Error(await rejected.innerText());
     const secret = (await adminPage.getByTestId("totp-secret").innerText()).trim();
     await adminPage.getByLabel("Authenticator code").fill(code(secret));
     await adminPage.getByRole("button", { name: "Verify" }).click();
