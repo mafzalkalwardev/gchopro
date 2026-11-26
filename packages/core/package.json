@@ -7,22 +7,33 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./edge": {
+      "types": "./dist/edge.d.ts",
+      "import": "./dist/edge.js"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node ./scripts/copy-assets.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
     "gen:secrets": "tsx src/gen-secrets.ts"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
+    "@oslojs/crypto": "^1.0.1",
+    "@oslojs/encoding": "^1.1.0",
+    "@oslojs/otp": "^1.1.0",
+    "libphonenumber-js": "^1.12.24",
     "pino": "^10.1.0",
+    "qrcode": "^1.5.4",
     "zod": "^4.6.6"
   },
   "devDependencies": {
     "@gchopro/config": "workspace:*",
     "@types/node": "^22.19.1",
+    "@types/qrcode": "^1.5.5",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.13"

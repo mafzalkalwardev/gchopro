@@ -15,10 +15,15 @@
     "db:generate": "pnpm --filter @gchopro/db generate",
     "db:migrate": "pnpm --filter @gchopro/core build && pnpm --filter @gchopro/db migrate",
     "db:seed": "pnpm --filter @gchopro/core build && pnpm --filter @gchopro/db seed",
+    "db:reencrypt": "pnpm --filter @gchopro/core build && pnpm --filter @gchopro/db reencrypt",
+    "test:integration": "pnpm --filter @gchopro/core build && pnpm --filter @gchopro/db test:integration",
     "gen:secrets": "pnpm --filter @gchopro/core gen:secrets",
     "format": "prettier --write ."
   },
   "devDependencies": {
+    "@oslojs/encoding": "^1.1.0",
+    "@oslojs/otp": "^1.1.0",
+    "@playwright/test": "^1.57.0",
     "eslint": "^9.39.1",
     "lefthook": "^1.13.6",
     "lint-staged": "^16.2.7",
@@ -41,6 +46,7 @@
     },
     "onlyBuiltDependencies": [
       "@node-rs/argon2",
+      "ioredis",
       "esbuild",
       "lefthook",
       "unrs-resolver"

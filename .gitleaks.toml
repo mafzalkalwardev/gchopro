@@ -1,0 +1,5 @@
+title = "GChoPro gitleaks"
+
+[allowlist]
+description = "The bundled common-password denylist is public wordlist data, not a credential."
+paths = ['''packages/core/src/auth/common-passwords.txt''']

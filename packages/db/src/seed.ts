@@ -1,6 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { hash } from "@node-rs/argon2";
-import { assertSeedAllowed, loadEnv, parseSeedIdentity } from "@gchopro/core";
+import { assertSeedAllowed, hashPassword, loadEnv, parseSeedIdentity } from "@gchopro/core";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -25,15 +24,6 @@ function addMonthsInKarachi(from: Date, months: number): Date {
   const local = new Date(from.getTime() + KARACHI_OFFSET_MS);
   local.setUTCMonth(local.getUTCMonth() + months);
   return new Date(local.getTime() - KARACHI_OFFSET_MS);
-}
-
-async function hashPassword(password: string): Promise<string> {
-  return hash(password, {
-    memoryCost: 19456,
-    timeCost: 2,
-    parallelism: 1,
-    algorithm: 2, // Argon2id. The library enum is const and cannot be imported under verbatimModuleSyntax.
-  });
 }
 
 function printSecret(label: string, value: string): void {
@@ -237,8 +227,11 @@ if (env.APP_ENV === "development") {
     const demo1 = uuidv7();
     const demo2 = uuidv7();
     const token = randomBytes(32).toString("hex");
-    const demo1Password = randomBytes(18).toString("base64url");
-    const demo2Password = randomBytes(18).toString("base64url");
+    const configuredDemo = process.env.SEED_DEMO_PASSWORD;
+    const sharedDemo =
+      configuredDemo !== undefined && configuredDemo.length >= 16 ? configuredDemo : null;
+    const demo1Password = sharedDemo ?? randomBytes(18).toString("base64url");
+    const demo2Password = sharedDemo ?? randomBytes(18).toString("base64url");
     const peer1 = "+15005550001";
     const peer2 = "+15005550002";
     const conversation1 = uuidv7();
@@ -423,8 +416,10 @@ if (env.APP_ENV === "development") {
       source: "admin",
     });
     printSecret("Dev Phone token", token);
-    printSecret("demo1 password", demo1Password);
-    printSecret("demo2 password", demo2Password);
+    if (sharedDemo === null) {
+      printSecret("demo1 password", demo1Password);
+      printSecret("demo2 password", demo2Password);
+    }
   }
 }
 

@@ -14,15 +14,18 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "reencrypt": "tsx src/reencrypt.ts",
     "generate": "drizzle-kit generate",
     "migrate": "tsx src/migrate.ts",
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
     "@gchopro/core": "workspace:*",
-    "@node-rs/argon2": "^2.0.2",
     "drizzle-orm": "^0.45.2",
+    "ioredis": "^5.8.2",
     "postgres": "^3.4.7",
+    "rate-limiter-flexible": "^8.2.0",
     "uuidv7": "^1.0.2"
   },
   "devDependencies": {

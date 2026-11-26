@@ -30,6 +30,7 @@ const lines = [
   "LOG_LEVEL=info",
   "SEED_ADMIN_USERNAME=admin",
   `SEED_ADMIN_PASSWORD=${hex()}`,
+  `SEED_DEMO_PASSWORD=${hex()}`,
   `POSTGRES_PASSWORD=${owner}`,
   `GCHOPRO_APP_PASSWORD=${app}`,
   `REDIS_PASSWORD=${redis}`,
