@@ -23,7 +23,7 @@ import {
   type SegmentCount,
   type SendBody,
 } from "@gchopro/core";
-import { and, asc, desc, eq, gt, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lt, lte, ne } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import { commitCaps, readCaps } from "./caps.js";
 import { getDb } from "./client.js";
@@ -1159,26 +1159,13 @@ export async function dueWork(limit = 100): Promise<{ id: string; simId: string 
 
 /** The oldest waiting message on every SIM, so one backed-up line cannot hide the others. */
 export async function dueHeads(): Promise<{ id: string; simId: string }[]> {
-  const result: unknown = await getDb().execute(sql`
-    select distinct on (sim_id) id, sim_id
-    from messages
-    where status in ('queued', 'held', 'scheduled')
-    order by sim_id, created_at asc
-  `);
-  const list = Array.isArray(result)
-    ? result
-    : result !== null &&
-        typeof result === "object" &&
-        "rows" in result &&
-        Array.isArray(result.rows)
-      ? result.rows
-      : [];
+  const due = await dueWork(2000);
+  const seen = new Set<string>();
   const heads: { id: string; simId: string }[] = [];
-  for (const row of list) {
-    if (row === null || typeof row !== "object") continue;
-    const record = row as Record<string, unknown>;
-    if (typeof record.id !== "string" || typeof record.sim_id !== "string") continue;
-    heads.push({ id: record.id, simId: record.sim_id });
+  for (const item of due) {
+    if (seen.has(item.simId)) continue;
+    seen.add(item.simId);
+    heads.push(item);
   }
   return heads;
 }
