@@ -1,4 +1,5 @@
 import { COOKIE } from "@gchopro/core";
+import { screenText } from "@/lib/copy";
 import { listOptOuts } from "@gchopro/db";
 import { cookies } from "next/headers";
 import { BenchNav, requireDesk } from "@/lib/desk";
@@ -14,7 +15,7 @@ export default async function OptOutsPage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
-        <h1 className="font-display text-3xl">Opt-outs</h1>
+        <h1 className="font-display text-3xl">{await screenText("opt_outs")}</h1>
         <ul className="mt-8 max-w-xl space-y-4">
           {rows.length === 0 ? <li className="font-body">No active opt-outs.</li> : null}
           {rows.map((row) => (

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { screenText } from "@/lib/copy";
 import { COOKIE } from "@gchopro/core";
 import { listPortalNotices, listScheduled } from "@gchopro/db";
 import { CancelButton } from "../composer";
@@ -15,7 +16,7 @@ export default async function ScheduledPage() {
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-4xl">Scheduled</h1>
+      <h1 className="mt-3 font-display text-4xl">{await screenText("scheduled")}</h1>
       <PortalNav unread={unread} />
       <ul className="mt-8 max-w-xl space-y-3">
         {rows.messages.map((message) => (

@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { screenCopy } from "@gchopro/core/i18n";
+import { useLocale } from "@/lib/locale";
 
 function csrfToken(): string {
   const row = document.cookie.split("; ").find((part) => part.startsWith("__Host-gcho_csrf="));
@@ -8,6 +10,7 @@ function csrfToken(): string {
 }
 
 export default function PasswordPage() {
+  const locale = useLocale();
   const [message, setMessage] = useState("");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -28,7 +31,7 @@ export default function PasswordPage() {
 
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <h1 className="font-display text-3xl">Change password</h1>
+      <h1 className="font-display text-3xl">{screenCopy(locale, "portal_password")}</h1>
       <form className="mt-6 grid max-w-sm gap-3" onSubmit={onSubmit}>
         <label className="grid gap-1 font-body text-sm">
           Current password

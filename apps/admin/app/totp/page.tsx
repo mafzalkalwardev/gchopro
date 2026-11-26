@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { screenCopy } from "@gchopro/core/i18n";
+import { useLocale } from "@/lib/locale";
 
 function csrfToken(): string {
   const row = document.cookie.split("; ").find((part) => part.startsWith("__Host-gcho_csrf="));
@@ -8,6 +10,7 @@ function csrfToken(): string {
 }
 
 export default function TotpPage() {
+  const locale = useLocale();
   const [secret, setSecret] = useState("");
   const [codes, setCodes] = useState<string[]>([]);
   const [message, setMessage] = useState("");
@@ -50,7 +53,7 @@ export default function TotpPage() {
   if (codes.length > 0) {
     return (
       <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-        <h1 className="font-display text-3xl">Recovery codes</h1>
+        <h1 className="font-display text-3xl">{screenCopy(locale, "recovery_codes")}</h1>
         <ul data-testid="recovery-codes" className="mt-4 grid gap-1 font-mono text-sm">
           {codes.map((code) => (
             <li key={code}>{code}</li>
@@ -69,7 +72,7 @@ export default function TotpPage() {
 
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <h1 className="font-display text-3xl">Authenticator</h1>
+      <h1 className="font-display text-3xl">{screenCopy(locale, "authenticator")}</h1>
       <p data-testid="totp-secret" className="mt-4 font-mono text-sm">
         {secret}
       </p>

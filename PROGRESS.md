@@ -11,7 +11,7 @@ Canonical spec: `GChoPro-PRD.md`.
 - [x] M4: Messaging core and paced queue — issue [#4](https://github.com/mafzalkalwardev/gchopro/issues/4)
 - [x] M5: SIM health, alerts, compliance — issue [#5](https://github.com/mafzalkalwardev/gchopro/issues/5)
 - [x] M6: Translation — issue [#6](https://github.com/mafzalkalwardev/gchopro/issues/6)
-- [ ] M7: Analytics and remaining features — issue [#7](https://github.com/mafzalkalwardev/gchopro/issues/7)
+- [x] M7: Analytics and remaining features — issue [#7](https://github.com/mafzalkalwardev/gchopro/issues/7)
 - [ ] M8: Hardening, deployment, docs — issue [#8](https://github.com/mafzalkalwardev/gchopro/issues/8)
 
 ## §22.2 acceptance
@@ -81,6 +81,9 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-25 — The §19.4 policy sentence is in the admin and portal footers. Translation providers, analytics, and retention purge stay in later milestones.
 - 2026-11-25 — Outbound translation stores the typed text and replaces the wire body after the provider returns. The signature is appended to that translation. A provider failure stays held until the three-minute gate, and the user can then send the original on purpose. `none` turns translation off for every user.
 - 2026-11-25 — The worker keeps a BullMQ `translate` queue at concurrency 4. Each job tries the provider three times. CI does not start the worker. Tests inject the provider, so no live DeepL, Google, or LibreTranslate call runs in CI. The optional Compose profile `translate` is unchanged.
+- 2026-11-26 — `stats:rollup` runs every 5 minutes inside the worker and rewrites today and yesterday in `stats_daily`. Re-test rows are left out. CI does not start the worker, so the analytics test calls the rollup directly.
+- 2026-11-26 — Interface language is a `gcho_locale` cookie and the en / zh-CN catalog in `@gchopro/core/i18n`. Dark mode swaps the ink and paper tokens from a `gcho_theme` cookie. Web push stays off; a new message can play a sound or raise an in-tab notification. Backup jobs stay in M8, so system health shows that none has been recorded.
+- 2026-11-26 — The portal is installable when the manifest, 192 and 512 icons, and a fetch-handling service worker are present. CI checks those. A full Lighthouse score is not a CI job.
 
 ## Deviations (approved)
 
@@ -88,4 +91,4 @@ None.
 
 ## Known issues
 
-- Docker is not installed on the machine that built M0 through M6. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M6 translation preview, thread toggle, and provider test were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the existing browser sign-in test.
+- Docker is not installed on the machine that built M0 through M7. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M7 analytics, usage chart, inbox filters, support view, and system health screens were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the browser sign-in test.

@@ -65,6 +65,16 @@ export {
   translateQueued,
 } from "./translation-service.js";
 export {
+  analyticsExport,
+  analyticsLeaderboard,
+  analyticsSeries,
+  openSupportView,
+  recordWorkerBeat,
+  rollupStats,
+  supportViewEnabled,
+  systemHealth,
+} from "./analytics-service.js";
+export {
   assignUserSim,
   createNotice,
   createSubscription,

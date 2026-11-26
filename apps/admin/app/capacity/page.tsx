@@ -1,4 +1,5 @@
 import { capacity } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { BenchNav, requireDesk } from "@/lib/desk";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export default async function CapacityPage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">Capacity</h1>
+        <h1 className="font-display text-4xl">{await screenText("capacity")}</h1>
         <p className="mt-3 font-mono text-sm">
           {snapshot.totals.free} free of {snapshot.totals.slots} slots ·{" "}
           {snapshot.totals.usersWithoutSim} users without a SIM

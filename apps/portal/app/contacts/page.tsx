@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { screenText } from "@/lib/copy";
 import { COOKIE } from "@gchopro/core";
 import { listContacts, listPortalNotices } from "@gchopro/db";
 import { PortalNav, requirePortal } from "@/lib/gate";
@@ -15,7 +16,7 @@ export default async function ContactsPage() {
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-4xl">Contacts</h1>
+      <h1 className="mt-3 font-display text-4xl">{await screenText("contacts")}</h1>
       <PortalNav unread={unread} />
       <table className="mt-8 w-full max-w-3xl border-collapse font-body text-sm">
         <thead>

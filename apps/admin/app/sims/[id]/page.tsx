@@ -1,4 +1,5 @@
 import { getSim } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { notFound } from "next/navigation";
 import { BenchNav, HealthMark, requireDesk } from "@/lib/desk";
 import { SimActions } from "../sim-actions";
@@ -14,7 +15,10 @@ export default async function SimPage({ params }: { params: Promise<{ id: string
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">{sim.phoneNumber ?? sim.carrierName ?? "SIM"}</h1>
+        <h1 className="font-display text-4xl">
+          <span className="sr-only">{await screenText("sim")}</span>
+          {sim.phoneNumber ?? sim.carrierName ?? "SIM"}
+        </h1>
         <p className="mt-2 font-mono text-sm">
           {sim.deviceName} · slot {sim.slotIndex} · <HealthMark health={sim.health} />
         </p>

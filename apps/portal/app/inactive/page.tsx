@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { screenText } from "@/lib/copy";
 import { redirect } from "next/navigation";
 import { COOKIE } from "@gchopro/core";
 import { isSessionRecord, readSession, sessionStep } from "@gchopro/db";
@@ -16,7 +17,7 @@ export default async function InactivePage() {
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-4xl">Subscription inactive</h1>
+      <h1 className="mt-3 font-display text-4xl">{await screenText("inactive")}</h1>
       <p className="mt-4 max-w-lg font-body">
         This account cannot send. Contact your administrator.
       </p>

@@ -161,6 +161,25 @@ export {
 } from "./alerts/decide.js";
 export { csvCell, csvLine, parseContactCsv, type ContactCsvRow } from "./csv.js";
 export {
+  analyticsCsv,
+  averageDeliverySec,
+  bucketKey,
+  deliveryRatio,
+  foldStats,
+  rangeBounds,
+  rollupWindow,
+  shiftDay,
+  startOfZonedDay,
+  tallyFailures,
+  toSeries,
+  totalsOf,
+  zonedDay,
+  type AnalyticsCsvRow,
+  type DailyStat,
+  type SeriesPoint,
+  type StatEvent,
+} from "./analytics/series.js";
+export {
   assignSim,
   disableSubscription,
   disableUser,

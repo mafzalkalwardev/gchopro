@@ -1,4 +1,5 @@
 import { getDevice } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { notFound } from "next/navigation";
 import { BenchNav, HealthMark, requireDesk } from "@/lib/desk";
 import { DeviceActions } from "../device-actions";
@@ -14,7 +15,10 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">{device.name}</h1>
+        <h1 className="font-display text-4xl">
+          <span className="sr-only">{await screenText("device")}</span>
+          {device.name}
+        </h1>
         <p className="mt-2 font-mono text-sm">
           {device.status} · {device.online ? "online" : "offline"} ·{" "}
           {device.model ?? "unknown model"}

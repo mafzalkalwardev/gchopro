@@ -1,4 +1,5 @@
 import { BenchNav, requireDesk } from "@/lib/desk";
+import { screenText } from "@/lib/copy";
 import { dashboard } from "@gchopro/db";
 import { KillSwitch } from "./kill-switch";
 
@@ -12,7 +13,7 @@ export default async function HomePage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
-        <h1 className="font-display text-3xl">Dispatch bench</h1>
+        <h1 className="font-display text-3xl">{await screenText("bench")}</h1>
         <p data-testid="signed-in" className="mt-4 font-body">
           {session.username}
         </p>

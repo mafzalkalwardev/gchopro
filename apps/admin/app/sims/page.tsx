@@ -1,4 +1,5 @@
 import { listSims } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { BenchNav, HealthMark, requireDesk } from "@/lib/desk";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default async function SimsPage({
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">SIMs</h1>
+        <h1 className="font-display text-4xl">{await screenText("sims")}</h1>
         <form className="mt-4 flex gap-3 font-body text-sm" method="get">
           <input
             className="border border-ink/20 bg-paper px-3 py-2"

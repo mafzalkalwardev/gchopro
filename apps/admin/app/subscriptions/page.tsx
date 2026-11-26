@@ -1,4 +1,5 @@
 import { listSubscriptions } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { BenchNav, requireDesk } from "@/lib/desk";
 import { BulkExtend } from "./bulk-extend";
 
@@ -26,7 +27,7 @@ export default async function SubscriptionsPage({
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">Subscriptions</h1>
+        <h1 className="font-display text-4xl">{await screenText("subscriptions")}</h1>
         <nav className="mt-4 flex gap-4 font-body text-sm">
           {tabs.map((tab) => (
             <a key={tab.label} href={tab.href}>

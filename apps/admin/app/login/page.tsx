@@ -1,6 +1,9 @@
 "use client";
 
 import { FormEvent, useState, useSyncExternalStore } from "react";
+import { screenCopy } from "@gchopro/core/i18n";
+import { useLocale } from "@/lib/locale";
+import { LanguageSwitch, ThemeSwitch } from "../preferences";
 
 function csrfToken(): string {
   const row = document.cookie.split("; ").find((part) => part.startsWith("__Host-gcho_csrf="));
@@ -16,6 +19,7 @@ function useHydrated(): boolean {
 }
 
 export default function LoginPage() {
+  const locale = useLocale();
   const [message, setMessage] = useState("");
   const hydrated = useHydrated();
 
@@ -38,7 +42,9 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-3xl">Admin sign-in</h1>
+      <h1 className="mt-3 font-display text-3xl">{screenCopy(locale, "admin_login")}</h1>
+      <LanguageSwitch path="/api/admin/locale" />
+      <ThemeSwitch path="/api/admin/theme" />
       <form
         className="mt-6 grid max-w-sm gap-3"
         data-hydrated={hydrated ? "true" : "false"}

@@ -1,4 +1,5 @@
 import { listDevices } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { BenchNav, HealthMark, requireDesk } from "@/lib/desk";
 import { PairForm } from "./pair-form";
 
@@ -11,7 +12,7 @@ export default async function DevicesPage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">Devices</h1>
+        <h1 className="font-display text-4xl">{await screenText("devices")}</h1>
         <table className="mt-6 w-full border-collapse font-body text-sm">
           <thead>
             <tr className="border-b border-ink/20 text-left font-mono text-xs uppercase">

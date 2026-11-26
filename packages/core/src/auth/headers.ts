@@ -5,6 +5,7 @@ export function contentSecurityPolicy(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     "connect-src 'self'",
+    "worker-src 'self'",
     "font-src 'self'",
     "frame-ancestors 'none'",
     "base-uri 'none'",

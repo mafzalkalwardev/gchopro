@@ -9,6 +9,11 @@
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
+.dark {
+  --color-ink: #f4f0e6;
+  --color-paper: #1c1915;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

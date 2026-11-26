@@ -1,4 +1,5 @@
 import { listUsers } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { BenchNav, requireDesk } from "@/lib/desk";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export default async function UsersPage({
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
         <div className="flex items-end justify-between gap-4">
-          <h1 className="font-display text-4xl">Users</h1>
+          <h1 className="font-display text-4xl">{await screenText("users")}</h1>
           <a className="border border-ink px-3 py-2 font-body text-sm" href="/users/new">
             Create user
           </a>

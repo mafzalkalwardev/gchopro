@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { screenText } from "@/lib/copy";
 import { AppError } from "@gchopro/core";
 import { freeSims, getUser, listPolicies } from "@gchopro/db";
 import { BenchNav, requireDesk } from "@/lib/desk";
@@ -20,7 +21,10 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">Edit {user.username}</h1>
+        <h1 className="font-display text-4xl">
+          <span className="sr-only">{await screenText("edit_user")}</span>
+          Edit {user.username}
+        </h1>
         <UserForm
           mode="edit"
           userId={user.id}
