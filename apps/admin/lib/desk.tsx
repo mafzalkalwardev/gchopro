@@ -29,6 +29,9 @@ export function BenchNav({ username }: { username: string }) {
           <a href="/notices">Notices</a>
           <a href="/policies">Policies</a>
           <a href="/templates">Templates</a>
+          <a href="/opt-outs">Opt-outs</a>
+          <a href="/alerts">Alerts</a>
+          <a href="/settings">Settings</a>
         </nav>
         <p className="font-mono text-sm">{username}</p>
       </div>

@@ -673,6 +673,7 @@ export async function listThread(token: string | undefined, id: string) {
     peer: openSeal(`conversations.peer_number_enc.${id}`, conversation.peerNumberEnc) ?? "",
     archived: conversation.archived,
     tags: conversation.tags,
+    optedOut: await optedOut(conversation.peerNumberHash, session.userId),
     messages: thread.map(viewOf),
   };
 }
@@ -839,7 +840,10 @@ export async function processSend(
     simAssignable: sim.health === "active" && sim.activeOnDevice && device.status === "active",
     userActive: message.isRetest || (user.status === "active" && user.deletedAt === null),
     subscriptionActive: message.isRetest || subscriptionStatus === "active",
-    optedOut: message.isRetest ? false : await optedOut(message.peerNumberHash, user.id),
+    optedOut:
+      message.isRetest || message.isOptOutConfirmation
+        ? false
+        : await optedOut(message.peerNumberHash, user.id),
     contentBlocked: message.isRetest
       ? false
       : contentBlocked(body, {
@@ -1100,6 +1104,7 @@ export async function dueWork(limit = 100): Promise<{ id: string; simId: string 
     .select({ id: messages.id, simId: messages.simId })
     .from(messages)
     .where(inArray(messages.status, ["queued", "held", "scheduled"]))
+    .orderBy(asc(messages.createdAt))
     .limit(limit);
 }
 

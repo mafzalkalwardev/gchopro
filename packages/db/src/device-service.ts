@@ -17,6 +17,7 @@ import {
   pairingDecision,
   reconcileSims,
   serviceOutSince,
+  settingSchemas,
   testNumberAllowed,
   tokenNeedsRotation,
   type ReportedSimInput,
@@ -45,7 +46,17 @@ import {
   type HealthSettings,
 } from "./device-shared.js";
 import { consumeLimit } from "./limits.js";
-import { alerts, conversations, devices, messages, simEvents, sims, users } from "./schema.js";
+import { syncDeviceAlert } from "./alerts-service.js";
+import {
+  alerts,
+  conversations,
+  devices,
+  messages,
+  settings,
+  simEvents,
+  sims,
+  users,
+} from "./schema.js";
 import { forgetSessions, publishRevoked, revokeAllSessions } from "./sessions.js";
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
@@ -124,6 +135,16 @@ async function enterSuspension(tx: Tx, simId: string, deviceId: string, requestI
     .update(messages)
     .set({ status: "held", holdReason: "sim_unhealthy" })
     .where(and(eq(messages.simId, simId), inArray(messages.status, ["queued", "scheduled"])));
+  const simRows = await tx
+    .select({ carrierName: sims.carrierName, lastFailureName: sims.lastFailureName })
+    .from(sims)
+    .where(eq(sims.id, simId))
+    .limit(1);
+  const owners = await tx
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.simId, simId))
+    .limit(1);
   const dedupeKey = `sim_suspected_suspended:${simId}`;
   const open = await tx
     .select({ id: alerts.id })
@@ -137,8 +158,13 @@ async function enterSuspension(tx: Tx, simId: string, deviceId: string, requestI
       severity: "critical",
       deviceId,
       simId,
+      userId: owners[0]?.id,
       title: "SIM may be suspended",
-      detail: { simId },
+      detail: {
+        carrier: simRows[0]?.carrierName ?? null,
+        lastFailureName: simRows[0]?.lastFailureName ?? null,
+        userId: owners[0]?.id ?? null,
+      },
       dedupeKey,
       notifiedChannels: [],
     });
@@ -217,7 +243,7 @@ async function saveHealth(
   if (input.clearSuspension && health === "active") {
     await tx
       .update(messages)
-      .set({ status: "queued", holdReason: null })
+      .set({ status: "queued", holdReason: null, queuedAt: input.now })
       .where(
         and(
           eq(messages.simId, input.row.id),
@@ -225,6 +251,44 @@ async function saveHealth(
           eq(messages.holdReason, "sim_unhealthy"),
         ),
       );
+    await tx
+      .update(alerts)
+      .set({ resolvedAt: input.now })
+      .where(
+        and(
+          eq(alerts.dedupeKey, `sim_suspected_suspended:${input.row.id}`),
+          isNull(alerts.resolvedAt),
+        ),
+      );
+  }
+  const watched =
+    health === "absent" || health === "locked" || health === "no_service" || health === "error";
+  const stateKey = `sim_state_change:${input.row.id}`;
+  if (changed && watched) {
+    const openState = await tx
+      .select({ id: alerts.id })
+      .from(alerts)
+      .where(and(eq(alerts.dedupeKey, stateKey), isNull(alerts.resolvedAt)))
+      .limit(1);
+    if (openState.length === 0) {
+      await tx.insert(alerts).values({
+        id: uuidv7(),
+        type: "sim_state_change",
+        severity: "warning",
+        deviceId: input.device.id,
+        simId: input.row.id,
+        title: "SIM health changed",
+        detail: { health },
+        dedupeKey: stateKey,
+        notifiedChannels: [],
+      });
+    }
+  }
+  if (changed && health === "active") {
+    await tx
+      .update(alerts)
+      .set({ resolvedAt: input.now })
+      .where(and(eq(alerts.dedupeKey, stateKey), isNull(alerts.resolvedAt)));
   }
   return health;
 }
@@ -451,6 +515,7 @@ export async function recordHeartbeat(
       slotsOnDevice: input.activeModemCount,
     })
     .where(eq(devices.id, device.id));
+  await syncDeviceAlert(device.id, now);
   const latest = await db
     .select({ at: simEvents.at })
     .from(simEvents)
@@ -1055,7 +1120,14 @@ export async function retestSim(admin: AdminActor, simId: string, testNumber: st
   if (await killSwitchOn(db)) throw new AppError(409, "forbidden", SAFE_TEXT.forbidden);
   const region = await readRegion(db);
   const e164 = normalizePhone(testNumber, region);
-  if (!testNumberAllowed(e164, cryptoEnv().testNumbers)) {
+  const configured = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, "test_numbers"))
+    .limit(1);
+  const parsed = settingSchemas.test_numbers.safeParse(configured[0]?.value);
+  const allowed = [cryptoEnv().testNumbers ?? "", ...(parsed.success ? parsed.data : [])].join(",");
+  if (!testNumberAllowed(e164, allowed)) {
     throw new AppError(403, "forbidden", SAFE_TEXT.forbidden);
   }
   const rows = await db.select().from(sims).where(eq(sims.id, simId)).limit(1);

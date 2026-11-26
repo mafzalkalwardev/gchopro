@@ -246,6 +246,9 @@ importers:
       ioredis:
         specifier: ^5.8.2
         version: 5.11.1
+      nodemailer:
+        specifier: ^10.6.1
+        version: 10.6.1
       postgres:
         specifier: ^3.4.7
         version: 3.4.9
@@ -262,6 +265,9 @@ importers:
       '@types/node':
         specifier: ^22.19.1
         version: 22.20.7
+      '@types/nodemailer':
+        specifier: ^8.0.2
+        version: 8.0.2
       drizzle-kit:
         specifier: ^0.31.6
         version: 0.31.11
@@ -1502,6 +1508,9 @@ packages:
   '@types/node@22.20.7':
     resolution: {integrity: sha512-F/Mcc4pD3YwXQCG50hb8BjB5RmrOere6hge7n2XHf0V8tpkZOVEjwYv9Ql7n0MpMn8Bv7+q12P9w6UHsBm0Sfw==}
 
+  '@types/nodemailer@8.0.2':
+    resolution: {integrity: sha512-c7M5ox8p0nEOfbJ2E9Qcmt8/QCu/VzsiAhzBiZbvky2PhKZDHpKB3sQHBM5MEZNkCfBOaS6S9//AGPRTNB7IaA==}
+
   '@types/qrcode@1.5.6':
     resolution: {integrity: sha512-te7NQcV2BOvdj2b1hCAHzAoMNuj65kNBMz0KBaxM6c3VGBOhU0dURQKOtH8CFNI/dsKkwlv32p26qYQTWoB5bw==}
 
@@ -2390,6 +2399,10 @@ packages:
   node-releases@2.0.65:
     resolution: {integrity: sha512-PfvofsGQ+MiOQIPkX9fU8ELUWmy5zL74CdQaph/ismKszfFkfwXaw0cGiwbwym2hT9k5+mdyl8O5WQ1MD8EHmA==}
     engines: {node: '>=18'}
+
+  nodemailer@10.6.1:
+    resolution: {integrity: sha512-d7kfFfS/tR4Aca+SBvRaQ+MXKNv7d2JiRe5TxaRcFT/kYMh4GGPnW9aKksTIEvyEbA7d/7HYWE4YPDEHxzJj/g==}
+    engines: {node: '>=20.0.0'}
 
   obug@2.2.1:
     resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
@@ -3761,6 +3774,10 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/nodemailer@8.0.2':
+    dependencies:
+      '@types/node': 22.20.7
+
   '@types/qrcode@1.5.6':
     dependencies:
       '@types/node': 22.20.7
@@ -4597,6 +4614,8 @@ snapshots:
     optional: true
 
   node-releases@2.0.65: {}
+
+  nodemailer@10.6.1: {}
 
   obug@2.2.1: {}
 

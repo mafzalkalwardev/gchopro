@@ -3,34 +3,18 @@ import {
   SAFE_TEXT,
   aggregateReport,
   classifyFailure,
-  matchingKeyword,
   type StatusReport,
 } from "@gchopro/core";
-import { and, asc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import type { Db } from "./client.js";
 import { getDb } from "./client.js";
+import { handleInboundKeywords } from "./compliance.js";
 import { noteSendOutcome } from "./device-service.js";
 import { requeueSameSim } from "./messaging.js";
 import { publishUser } from "./redis.js";
-import {
-  indexPhone,
-  normalizePhone,
-  openSeal,
-  readKeywords,
-  readOptOutScope,
-  readRegion,
-  seal,
-} from "./device-shared.js";
-import {
-  alerts,
-  conversations,
-  messagePartReports,
-  messages,
-  optOuts,
-  sims,
-  users,
-} from "./schema.js";
+import { indexPhone, normalizePhone, openSeal, readRegion, seal } from "./device-shared.js";
+import { alerts, conversations, messagePartReports, messages, sims, users } from "./schema.js";
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
@@ -214,8 +198,6 @@ export async function ingestInbox(
 ) {
   const db = getDb();
   const region = await readRegion(db);
-  const keywords = await readKeywords(db);
-  const scope = await readOptOutScope(db);
   let inserted = 0;
   let duplicates = 0;
   let unroutable = 0;
@@ -314,31 +296,16 @@ export async function ingestInbox(
         providerId: row.providerId,
       });
       await tx.update(sims).set({ lastReceiveAt: now }).where(eq(sims.id, sim.id));
-      const keyword = matchingKeyword(row.body, keywords);
-      if (keyword !== null) {
-        const filters = [
-          eq(optOuts.numberHash, peerHash),
-          eq(optOuts.scope, scope),
-          isNull(optOuts.reversedAt),
-        ];
-        if (scope === "user") filters.push(eq(optOuts.userId, owner.id));
-        const active = await tx
-          .select({ id: optOuts.id })
-          .from(optOuts)
-          .where(and(...filters))
-          .limit(1);
-        if (active.length === 0) {
-          await tx.insert(optOuts).values({
-            id: uuidv7(),
-            numberHash: peerHash,
-            scope,
-            userId: scope === "user" ? owner.id : null,
-            source: "keyword",
-            keyword,
-            sourceMessageId: messageId,
-          });
-        }
-      }
+      await handleInboundKeywords(tx, {
+        body: row.body,
+        peerHash,
+        e164,
+        ownerId: owner.id,
+        simId: sim.id,
+        deviceId,
+        conversationId,
+        messageId,
+      });
       inserted += 1;
       received.push({ userId: owner.id, messageId });
     }

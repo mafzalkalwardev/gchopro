@@ -597,6 +597,7 @@ export const messages = pgTable(
     partsDelivered: smallint("parts_delivered"),
     idempotencyKey: text("idempotency_key"),
     isRetest: boolean("is_retest").notNull().default(false),
+    isOptOutConfirmation: boolean("is_opt_out_confirmation").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -659,6 +660,7 @@ export const optOuts = pgTable(
   {
     id: uuid("id").primaryKey(),
     numberHash: text("number_hash").notNull(),
+    numberEnc: text("number_enc"),
     scope: optOutScope("scope").notNull(),
     userId: uuid("user_id").references(() => users.id),
     source: optOutSource("source").notNull(),
@@ -725,6 +727,7 @@ export const alerts = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'`),
+    lastNotifiedAt: tz("last_notified_at"),
   },
   (table) => [
     uniqueIndex("alerts_open_dedupe")

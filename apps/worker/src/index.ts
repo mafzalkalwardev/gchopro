@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { KILL_POLL_MS, createLogger, loadEnv, redactForLog, simQueueName } from "@gchopro/core";
 import {
+  deliverPendingAlerts,
   dueWork,
   getDb,
   holdUnhealthy,
@@ -8,6 +9,7 @@ import {
   processSend,
   promoteScheduled,
   simRuntime,
+  sweepDeviceAlerts,
   sweepLeases,
   tickSubscriptions,
 } from "@gchopro/db";
@@ -22,7 +24,7 @@ type Lane = { queue: Queue; worker: Worker };
 
 const lanes = new Map<string, Lane>();
 
-logger.info(redactForLog({ phase: "m4" }), "worker started");
+logger.info(redactForLog({ phase: "m5" }), "worker started");
 
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
@@ -110,10 +112,26 @@ const killWatch = setInterval(() => {
   void watchKill().catch(() => undefined);
 }, KILL_POLL_MS);
 
+async function watchHealth(): Promise<void> {
+  await sweepDeviceAlerts();
+  await deliverPendingAlerts();
+}
+
+void watchHealth();
+const healthWatch = setInterval(() => {
+  void watchHealth().catch((error: unknown) => {
+    logger.error(
+      { message: error instanceof Error ? error.message : "health sweep failed" },
+      "health sweep failed",
+    );
+  });
+}, 30_000);
+
 function stop(signal: string): void {
   clearInterval(subscriptions);
   clearInterval(pacing);
   clearInterval(killWatch);
+  clearInterval(healthWatch);
   logger.info({ signal }, "worker stopping");
   process.exit(0);
 }

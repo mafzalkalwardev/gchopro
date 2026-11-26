@@ -133,7 +133,16 @@ export {
   type SimHealth,
 } from "./health/machine.js";
 export { countSegments, isTooLong, MAX_SEGMENTS, type SegmentCount } from "./sms/segments.js";
-export { matchingKeyword } from "./compliance/keywords.js";
+export { POLICY_TEXT, confirmationLanguage, matchingKeyword } from "./compliance/keywords.js";
+export {
+  alertText,
+  batteryLowOpen,
+  batteryLowResolved,
+  deviceOfflineDecision,
+  maskNumber,
+  renotifyDue,
+  type AlertSeverity,
+} from "./alerts/decide.js";
 export { csvCell, csvLine, parseContactCsv, type ContactCsvRow } from "./csv.js";
 export {
   assignSim,

@@ -24,6 +24,15 @@ export {
   updateSetting,
 } from "./settings-service.js";
 export { portalProfile } from "./profile.js";
+export {
+  acknowledgeAlert,
+  deliverPendingAlerts,
+  listAlerts,
+  sendAlertTest,
+  sweepDeviceAlerts,
+  syncDeviceAlert,
+} from "./alerts-service.js";
+export { createOptOut, listOptOuts, reverseOptOut } from "./compliance.js";
 export { consumeLimit } from "./limits.js";
 export type { AdminActor } from "./device-shared.js";
 export {

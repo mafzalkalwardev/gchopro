@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { POLICY_TEXT } from "@gchopro/core";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         className={`${display.variable} ${body.variable} ${mono.variable} bg-paper font-body text-ink antialiased`}
       >
         {children}
+        <footer className="px-6 py-8 font-body text-sm text-ink/70">{POLICY_TEXT}</footer>
       </body>
     </html>
   );
