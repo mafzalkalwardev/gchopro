@@ -23,7 +23,7 @@ import {
   type SegmentCount,
   type SendBody,
 } from "@gchopro/core";
-import { and, asc, desc, eq, gt, inArray, isNull, lt, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lt, lte, ne } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import { commitCaps, readCaps } from "./caps.js";
 import { getDb } from "./client.js";
@@ -995,7 +995,7 @@ export async function promoteScheduled(now = new Date()): Promise<number> {
   const rows = await getDb()
     .update(messages)
     .set({ status: "queued", queuedAt: now })
-    .where(and(eq(messages.status, "scheduled"), sql`${messages.scheduledFor} <= ${now}`))
+    .where(and(eq(messages.status, "scheduled"), lte(messages.scheduledFor, now)))
     .returning({ id: messages.id });
   return rows.length;
 }
@@ -1005,7 +1005,7 @@ export async function sweepLeases(now = new Date()): Promise<number> {
   const rows = await db
     .select()
     .from(messages)
-    .where(and(eq(messages.status, "dispatched"), sql`${messages.leaseExpiresAt} < ${now}`));
+    .where(and(eq(messages.status, "dispatched"), lt(messages.leaseExpiresAt, now)));
   let swept = 0;
   for (const message of rows) {
     const deviceRows = await db
