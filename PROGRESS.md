@@ -93,6 +93,7 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-26 — Playwright runs one worker. The lifecycle test signs in as `ops`, seeded only when `SEED_OPS_PASSWORD` is set, so it does not share the admin or demo1 password with the auth test.
 - 2026-11-26 — BullMQ 6 rejects a colon in a queue name. Each SIM still has its own queue at concurrency 1. The name is `send-sim-{id}` rather than `send:sim:{id}`. Jobs are still never moved to another SIM.
 - 2026-11-26 — BullMQ 6 also rejects a custom job id with a single colon. Translation jobs use `{role}-{messageId}`.
+- 2026-11-26 — The worker image installs the Postgres 16 client. Bookworm's default client is 15 and cannot dump this server. Restore drops `SET transaction_timeout` because a Postgres 17 or newer client writes it and Postgres 16 rejects it.
 
 ## Deviations (approved)
 

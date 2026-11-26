@@ -28,7 +28,10 @@ restore="${base}/gchopro_restore"
 psql "$admin" -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS gchopro_restore WITH (FORCE);"
 psql "$admin" -v ON_ERROR_STOP=1 -c "CREATE DATABASE gchopro_restore;"
 psql "$restore" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
-pg_restore --dbname="$restore" --no-owner --no-privileges --exit-on-error "$work/dump.dump"
+# pg_dump 17+ writes SET transaction_timeout. Postgres 16 rejects that parameter.
+pg_restore --no-owner --no-privileges --file=- "$work/dump.dump" \
+  | sed '/^SET transaction_timeout /d' \
+  | psql "$restore" -v ON_ERROR_STOP=1
 users="$(psql "$restore" -v ON_ERROR_STOP=1 -Atc "SELECT COUNT(*) FROM users;")"
 settings="$(psql "$restore" -v ON_ERROR_STOP=1 -Atc "SELECT COUNT(*) FROM settings;")"
 psql "$restore" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('public.messages');" >/dev/null

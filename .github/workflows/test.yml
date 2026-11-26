@@ -78,7 +78,7 @@ jobs:
       - name: Production image
         run: |
           docker build -f infra/Dockerfile -t gchopro:ci .
-          docker run --rm --read-only --tmpfs /tmp --user node gchopro:ci node -e "console.log('ready')"
+          docker run --rm --read-only --tmpfs /tmp --user node gchopro:ci bash -c 'pg_dump --version | grep -q " 16\." && node -e "console.log(\"ready\")"'
   android:
     runs-on: ubuntu-latest
     steps:
