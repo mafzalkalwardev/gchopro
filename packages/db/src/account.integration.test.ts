@@ -179,6 +179,15 @@ describe("users, sessions, and subscriptions", () => {
     expect(names).toContain("payment.recorded");
     expect(names).toContain("payment.voided");
 
+    const live = await login({
+      app: "portal",
+      username: created.user.username,
+      password: reset.initialPassword ?? "",
+      ip: "203.0.113.66",
+      userAgent: "vitest",
+      requestId: randomUUID(),
+    });
+    expect(live.ok).toBe(true);
     await disableUserSubscription(actor, subscriptionId, "closed");
     const disabledSessions = await db
       .select()
