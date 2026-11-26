@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+.next
+dist
+coverage
+graphify-out
+GChoPro-PRD.md
+packages/db/migrations
