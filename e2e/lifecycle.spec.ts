@@ -427,15 +427,38 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       "confirmation",
     );
 
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/heartbeat`, {
+        headers,
+        data: {
+          battery: 90,
+          charging: true,
+          network: "wifi",
+          appVersion: "2.0.0",
+          androidSdk: 34,
+          activeModemCount: 2,
+          uptimeSec: 40,
+        },
+      }),
+      "heartbeat again",
+    );
     for (const mark of ["one", "two"]) {
       await compose(portalPage, limited, `limit ${mark}`);
       await portalPage.waitForURL("**/c/**");
-      const id = await pollPending(
-        request,
-        device.id,
-        device.token,
-        (message) => message.body === `limit ${mark}`,
-      );
+      let id: string;
+      try {
+        id = await pollPending(
+          request,
+          device.id,
+          device.token,
+          (message) => message.body === `limit ${mark}`,
+        );
+      } catch (error) {
+        await portalPage.reload();
+        const text = (await portalPage.locator("body").innerText()).slice(0, 500);
+        const reason = error instanceof Error ? error.message : "pending message did not arrive";
+        throw new Error(`${reason} | page: ${text}`);
+      }
       await accepted(
         await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
           headers,

@@ -15,7 +15,7 @@ import {
   type Lang,
   type TranslationProvider,
 } from "@gchopro/core";
-import { and, eq, gte, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import { noteTranslationResult } from "./alerts-service.js";
 import { getDb } from "./client.js";
@@ -369,6 +369,7 @@ export async function claimTranslationJobs(
         gte(messages.createdAt, since),
       ),
     )
+    .orderBy(desc(messages.createdAt))
     .limit(100);
   if (candidates.length === 0) return [];
   const ids = candidates.map((row) => row.id);
