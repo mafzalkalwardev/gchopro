@@ -6,7 +6,7 @@ Canonical spec: `GChoPro-PRD.md`.
 
 - [x] M0: Foundation — scaffold, Compose files, env validation, full Drizzle schema and first migration, seed, pino, CI. Local migrate/seed is unverified until Docker is installed. CI on `m0-foundation` ran lint, typecheck, build, unit tests, audit, gitleaks, migrate, and seed (2026-11-26).
 - [x] M1: Security and auth baseline — issue [#1](https://github.com/mafzalkalwardev/gchopro/issues/1)
-- [ ] M2: Devices and multi-SIM — issue [#2](https://github.com/mafzalkalwardev/gchopro/issues/2)
+- [x] M2: Devices and multi-SIM — issue [#2](https://github.com/mafzalkalwardev/gchopro/issues/2)
 - [ ] M3: Users and subscriptions — issue [#3](https://github.com/mafzalkalwardev/gchopro/issues/3)
 - [ ] M4: Messaging core and paced queue — issue [#4](https://github.com/mafzalkalwardev/gchopro/issues/4)
 - [ ] M5: SIM health, alerts, compliance — issue [#5](https://github.com/mafzalkalwardev/gchopro/issues/5)
