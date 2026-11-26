@@ -172,9 +172,11 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     const signedIn = await loginResponse;
     await accepted(signedIn, "ops login");
     await adminPage.waitForURL("**/totp");
+    await expect(adminPage.getByTestId("totp-secret")).not.toBeEmpty();
     const secret = (await adminPage.getByTestId("totp-secret").innerText()).trim();
     await adminPage.getByLabel("Authenticator code").fill(code(secret));
     await adminPage.getByRole("button", { name: "Verify" }).click();
+    await expect(adminPage.getByTestId("recovery-codes")).toBeVisible();
     const recovery = (
       await adminPage.getByTestId("recovery-codes").locator("li").first().innerText()
     ).trim();
