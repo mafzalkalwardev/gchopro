@@ -10,7 +10,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@gchopro/core": "workspace:*"
+    "@gchopro/core": "workspace:*",
+    "@gchopro/db": "workspace:*"
   },
   "devDependencies": {
     "@gchopro/config": "workspace:*",

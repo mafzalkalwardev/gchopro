@@ -9,5 +9,6 @@ export async function adminActor(request: Request): Promise<AdminActor> {
     role: session.role,
     ip: requestIp(request),
     requestId: requestId(request),
+    sessionId: session.sessionId,
   };
 }

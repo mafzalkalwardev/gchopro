@@ -23,6 +23,10 @@ export function BenchNav({ username }: { username: string }) {
           <a href="/devices">Devices</a>
           <a href="/sims">SIMs</a>
           <a href="/capacity">Capacity</a>
+          <a href="/users">Users</a>
+          <a href="/subscriptions">Subscriptions</a>
+          <a href="/payments">Payments</a>
+          <a href="/notices">Notices</a>
         </nav>
         <p className="font-mono text-sm">{username}</p>
       </div>

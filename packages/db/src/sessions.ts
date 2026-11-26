@@ -1,16 +1,19 @@
 import {
   SESSION_CACHE_SECONDS,
+  effectiveStatus,
   newSessionToken,
+  portalAccess,
   sessionIdFromToken,
   sessionRejection,
   sessionWindow,
   slideExpiry,
   type SessionRejection,
+  type SubStatus,
 } from "@gchopro/core";
 import { and, eq, isNull, ne } from "drizzle-orm";
 import type { Db } from "./client.js";
 import { getRedis } from "./redis.js";
-import { sessions, users } from "./schema.js";
+import { sessions, subscriptions, users } from "./schema.js";
 export type RevokeReason =
   | "logout"
   | "password_reset"
@@ -35,6 +38,7 @@ export type SessionRecord = {
   aupAcceptedAt: string | null;
   readOnly: boolean;
   scheduled: boolean;
+  blocked: boolean;
   expiresAt: string;
   absoluteExpiresAt: string;
   passwordChangedAt: string;
@@ -117,6 +121,7 @@ export async function readSession(
     const cached = await redis.get(cacheKey(sessionId));
     if (cached !== null) {
       const record = JSON.parse(cached) as SessionRecord;
+      record.blocked = record.blocked ?? false;
       const rejection = rejectionOf(record, now);
       if (rejection !== null) return rejection;
       return record;
@@ -150,6 +155,7 @@ export async function readSession(
     aupAcceptedAt: row.user.aupAcceptedAt === null ? null : row.user.aupAcceptedAt.toISOString(),
     readOnly: false,
     scheduled: false,
+    blocked: false,
     expiresAt: row.session.expiresAt.toISOString(),
     absoluteExpiresAt: row.session.absoluteExpiresAt.toISOString(),
     passwordChangedAt: row.user.passwordChangedAt.toISOString(),
@@ -161,6 +167,7 @@ export async function readSession(
   };
   const rejection = rejectionOf(record, now);
   if (rejection !== null) return rejection;
+  await applyPortalAccess(db, record, row.user.simId, now);
   if (now.getTime() - row.session.lastSeenAt.getTime() >= 60_000) {
     const expiresAt = slideExpiry(record.app, now, row.session.absoluteExpiresAt);
     await db.update(sessions).set({ lastSeenAt: now, expiresAt }).where(eq(sessions.id, sessionId));
@@ -173,6 +180,51 @@ export async function readSession(
     // The database remains the source of truth.
   }
   return record;
+}
+
+function accessRank(status: SubStatus): number {
+  if (status === "active") return 0;
+  if (status === "scheduled") return 1;
+  if (status === "paused") return 2;
+  if (status === "expired") return 3;
+  return 4;
+}
+
+async function applyPortalAccess(
+  db: Query,
+  record: SessionRecord,
+  simId: string | null,
+  now: Date,
+): Promise<void> {
+  if (record.app !== "portal") return;
+  const rows = await db.select().from(subscriptions).where(eq(subscriptions.userId, record.userId));
+  const current = [...rows].sort(
+    (left, right) => accessRank(left.status) - accessRank(right.status),
+  )[0];
+  const access = portalAccess({
+    status: record.userStatus,
+    deletedAt: record.deletedAt === null ? null : new Date(record.deletedAt),
+    simId,
+    ipAllowed: true,
+    subscription:
+      current === undefined
+        ? null
+        : {
+            status: effectiveStatus({
+              status: current.status,
+              startsAt: current.startsAt,
+              endsAt: current.endsAt,
+              now,
+            }),
+            expiryBehavior: current.expiryBehavior,
+          },
+  });
+  if (!access.ok) {
+    record.blocked = true;
+    return;
+  }
+  record.readOnly = access.readOnly;
+  record.scheduled = access.scheduled;
 }
 
 function rejectionOf(record: SessionRecord, now: Date): SessionRejection | null {
