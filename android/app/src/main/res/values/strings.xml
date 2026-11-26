@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GChoPro</string>
+    <string name="channel">GChoPro gateway</string>
+    <string name="notification">This phone is a GChoPro gateway</string>
+    <string name="unpaired">Device unpaired. Pair again.</string>
+    <string name="setup_help">Use the HTTPS gateway address and the 6-digit code from the admin desk. Allow SMS, phone, and notification access. Exempt the app from battery optimization. On Android 15, allow restricted settings for this app if the system asks.</string>
+</resources>

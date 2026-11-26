@@ -13,6 +13,10 @@ export const SAFE_TEXT = {
   not_found: "Not found.",
   invalid_body: "The request could not be read.",
   forbidden: "That action is not allowed.",
+  invalid_code_format: "The pairing code must be 6 digits.",
+  pairing_not_found: "That pairing code was not accepted.",
+  upgrade_required: "This app version is no longer accepted.",
+  device_revoked: "This device is no longer paired.",
 } as const;
 
 export class AppError extends Error {

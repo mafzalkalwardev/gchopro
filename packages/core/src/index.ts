@@ -77,3 +77,60 @@ export {
   type SettingKey,
 } from "./settings/schema.js";
 export { AppError, SAFE_TEXT, apiData, apiError, apiFromError } from "./http/response.js";
+export {
+  ERROR_OFFLINE_MS,
+  HEARTBEAT_INTERVAL_MS,
+  NOT_READY_DWELL_MS,
+  NO_SERVICE_DWELL_MS,
+  PAIRING_ATTEMPT_LIMIT,
+  PAIRING_TTL_MS,
+  POLL_INTERVAL_MS,
+  PROTOCOL_VERSION,
+  SIM_REPORT_STALE_MS,
+  TOKEN_GRACE_MS,
+  newDeviceToken,
+  newPairingCode,
+  pairingCodeValid,
+  pairingDecision,
+  tokenNeedsRotation,
+} from "./device/protocol.js";
+export {
+  deviceEvent,
+  deviceEventsBody,
+  devicePatch,
+  heartbeatBody,
+  inboxBody,
+  pairingRequest,
+  pauseRequest,
+  registerBody,
+  reportedSim,
+  retestRequest,
+  retireRequest,
+  simPatch,
+  simReportBody,
+  statusReport,
+  statusReportBody,
+  type HeartbeatBody,
+  type InboxMessage,
+  type RegisterBody,
+  type ReportedSimInput,
+  type SimReportBody,
+  type StatusReport,
+} from "./device/schemas.js";
+export {
+  reconcileSims,
+  type ReconcilePlan,
+  type ReportedSimIdentity,
+  type StoredSimIdentity,
+} from "./device/reconcile.js";
+export { aggregateReport, testNumberAllowed, type AggregatedStatus } from "./device/reports.js";
+export { classifyFailure, type FailureClass } from "./health/classify.js";
+export {
+  evaluateHealth,
+  notReadySince,
+  serviceOutSince,
+  type HealthInput,
+  type SimHealth,
+} from "./health/machine.js";
+export { countSegments, isTooLong, MAX_SEGMENTS, type SegmentCount } from "./sms/segments.js";
+export { matchingKeyword } from "./compliance/keywords.js";

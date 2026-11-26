@@ -6,7 +6,7 @@ Canonical spec: `GChoPro-PRD.md`.
 
 - [x] M0: Foundation — scaffold, Compose files, env validation, full Drizzle schema and first migration, seed, pino, CI. Local migrate/seed is unverified until Docker is installed. CI on `m0-foundation` ran lint, typecheck, build, unit tests, audit, gitleaks, migrate, and seed (2026-11-26).
 - [x] M1: Security and auth baseline — issue [#1](https://github.com/mafzalkalwardev/gchopro/issues/1)
-- [ ] M2: Devices and multi-SIM — issue [#2](https://github.com/mafzalkalwardev/gchopro/issues/2)
+- [x] M2: Devices and multi-SIM — issue [#2](https://github.com/mafzalkalwardev/gchopro/issues/2)
 - [ ] M3: Users and subscriptions — issue [#3](https://github.com/mafzalkalwardev/gchopro/issues/3)
 - [ ] M4: Messaging core and paced queue — issue [#4](https://github.com/mafzalkalwardev/gchopro/issues/4)
 - [ ] M5: SIM health, alerts, compliance — issue [#5](https://github.com/mafzalkalwardev/gchopro/issues/5)
@@ -46,6 +46,17 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-26 — A password change keeps the current session by setting that session's `created_at` to the new `password_changed_at`. The §11 check rejects every session created before the password change, including the one that submitted it, unless that timestamp moves with the change.
 - 2026-11-26 — `SEED_DEMO_PASSWORD` is optional and read only by the development seed. CI sets it so the portal login test has a known password. It is not required to boot the apps.
 - 2026-11-26 — Admin and portal documents are rendered per request. The CSP nonce has to be minted for that request, or `strict-dynamic` blocks the scripts.
+- 2026-11-26 — `devices.slots_on_device` and `devices.rotate_requested` are stored columns. Capacity and a forced token rotation need them, and §6.3 did not list either field.
+- 2026-11-26 — Part reports live in `message_part_reports`. Idempotency is `(message_id, event, part_index)`.
+- 2026-11-26 — A handset is online when its last heartbeat is within `health.offline_after_seconds` (seeded at 90). `error` still waits until the heartbeat is 10 minutes old.
+- 2026-11-26 — Device routes answer with the §9 body. Admin routes keep the §10 `{ data }` envelope. Device calls use the bearer token. They do not use the browser CSRF cookie.
+- 2026-11-26 — A wrong pairing code increments the attempt count only when one pairing is open. Several open pairings stay untouched, so one guess cannot burn every code.
+- 2026-11-26 — A blank device number is not a SIM identity. Re-reporting a retired number reopens that SIM row so the phone hash can stay unique.
+- 2026-11-26 — Re-test creates a queued `is_retest` message. Nothing sends it until the M4 worker exists. Opt-out confirmation, translation, and email or Telegram alerts stay in later milestones.
+- 2026-11-26 — An inbox row with no assigned user is counted unroutable and stored as an alert. `messages.user_id` cannot be null, so there is no unroutable message row.
+- 2026-11-26 — `message.received` is not published on the portal session channel. That channel currently treats every payload as a revoked session.
+- 2026-11-26 — SIM health marks use ink and signal. The screen spec's extra hues stay out of the theme.
+- 2026-11-26 — The gateway application id is `com.gchopro.gateway`. A real dual-SIM phone still has to be checked by hand. CI runs `assembleDebug` and the JVM unit tests.
 
 ## Deviations (approved)
 
