@@ -39,7 +39,7 @@ const requestId = randomUUID();
 const logger = createLogger(env.LOG_LEVEL, { requestId });
 const connection = { url: env.REDIS_URL, maxRetriesPerRequest: null };
 
-type Lane = { queue: Queue; worker: Worker };
+type Lane = { queue: Queue; worker: Worker; running: boolean };
 
 const lanes = new Map<string, Lane>();
 
@@ -70,17 +70,29 @@ async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
 
 async function laneFor(simId: string, running: boolean): Promise<Lane> {
   const existing = lanes.get(simId);
-  const lane = existing ?? {
+  if (existing) {
+    if (existing.running !== running) {
+      if (running) await existing.worker.resume();
+      else await existing.worker.pause();
+      existing.running = running;
+    }
+    return existing;
+  }
+  const created: Lane = {
     queue: new Queue(simQueueName(simId), { connection }),
     worker: new Worker(simQueueName(simId), sendJob, { connection, concurrency: 1 }),
+    running: true,
   };
-  if (!existing) lanes.set(simId, lane);
-  if (running) await lane.worker.resume();
-  else await lane.worker.pause();
-  return lane;
+  lanes.set(simId, created);
+  if (!running) {
+    await created.worker.pause();
+    created.running = false;
+  }
+  return created;
 }
 
 async function pump(): Promise<void> {
+  trace("pump enter");
   const killed = await killSwitchOn(getDb());
   await promoteScheduled();
   await sweepLeases();
@@ -157,10 +169,11 @@ async function beat(): Promise<void> {
 }
 
 async function watchKill(): Promise<void> {
-  const killed = await killSwitchOn(getDb());
+  if (!(await killSwitchOn(getDb()))) return;
   for (const lane of lanes.values()) {
-    if (killed) await lane.worker.pause();
-    else await lane.worker.resume();
+    if (!lane.running) continue;
+    await lane.worker.pause();
+    lane.running = false;
   }
 }
 
@@ -173,15 +186,24 @@ function notePumpFailure(error: unknown): void {
   );
 }
 
-void pump().catch(notePumpFailure);
+let laneChain: Promise<void> = Promise.resolve();
+
+function exclusive(task: () => Promise<void>): void {
+  laneChain = laneChain.then(task).catch(notePumpFailure);
+}
+
+exclusive(() => pump());
 const subscriptions = setInterval(() => {
   void beat();
 }, 60_000);
 const pacing = setInterval(() => {
-  void pump().catch(notePumpFailure);
+  exclusive(() => pump());
 }, 2000);
+const alive = setInterval(() => {
+  trace("alive");
+}, 5000);
 const killWatch = setInterval(() => {
-  void watchKill().catch(() => undefined);
+  exclusive(() => watchKill());
 }, KILL_POLL_MS);
 
 async function watchHealth(): Promise<void> {
@@ -287,6 +309,7 @@ const maintenanceWatch = setInterval(() => {
 function stop(signal: string): void {
   clearInterval(subscriptions);
   clearInterval(pacing);
+  clearInterval(alive);
   clearInterval(killWatch);
   clearInterval(healthWatch);
   clearInterval(translationWatch);

@@ -89,7 +89,9 @@ function startWorker() {
     }),
   );
   child.on("exit", (code) => {
-    if (!stopping && code !== 0 && code !== null) process.exit(code);
+    if (stopping) return;
+    console.error(`worker exited ${code ?? "signal"}`);
+    process.exit(code === null || code === 0 ? 1 : code);
   });
 }
 
