@@ -409,6 +409,23 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     await expect(portalPage.getByText("Compose is turned off.")).toBeVisible();
     await compose(portalPage, peer, "after stop");
     await expect(portalPage.getByText("This number has opted out.")).toBeVisible();
+    const confirmation = await pollPending(request, device.id, device.token, (message) =>
+      message.body.includes("unsubscribed"),
+    );
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
+        headers,
+        data: {
+          id: confirmation,
+          event: "delivered",
+          partIndex: 0,
+          partCount: 1,
+          subscriptionId: 801,
+          at: new Date().toISOString(),
+        },
+      }),
+      "confirmation",
+    );
 
     for (const mark of ["one", "two"]) {
       await compose(portalPage, limited, `limit ${mark}`);
