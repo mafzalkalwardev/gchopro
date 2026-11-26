@@ -235,6 +235,10 @@ describe("paced messaging", () => {
     expect((await processSend(scheduled.message.id, { now: noon, random: 0.5 })).kind).toBe(
       "dispatch",
     );
+    await db
+      .update(messages)
+      .set({ status: "sent", leaseExpiresAt: noon })
+      .where(eq(messages.id, scheduled.message.id));
 
     const base = new Date(noon.getTime() + 30 * 60 * 1000);
     for (let index = 0; index < 3; index += 1) {
@@ -243,6 +247,10 @@ describe("paced messaging", () => {
       await beatAt(when);
       const step = await processSend(message.message.id, { now: when, random: 0.5 });
       expect(step.kind).toBe("dispatch");
+      await db
+        .update(messages)
+        .set({ status: "sent", leaseExpiresAt: when })
+        .where(eq(messages.id, message.message.id));
     }
     const fourth = await sendMessage(token, { to: "+923009990004", body: "Pace hold" });
     const holdAt = new Date(base.getTime() + 50_000);
