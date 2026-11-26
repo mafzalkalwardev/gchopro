@@ -79,10 +79,16 @@ async function pump(): Promise<void> {
     const lane = lanes.get(item.simId);
     if (lane === undefined) continue;
     try {
+      const existing = await lane.queue.getJob(item.id);
+      if (existing) {
+        const state = await existing.getState();
+        if (state === "failed" || state === "completed") await existing.remove();
+        else continue;
+      }
       await lane.queue.add(
         "send",
         { messageId: item.id },
-        { jobId: item.id, removeOnComplete: true },
+        { jobId: item.id, removeOnComplete: true, removeOnFail: 10 },
       );
     } catch {
       // The job is already waiting on this SIM queue.

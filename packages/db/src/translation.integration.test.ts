@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { TranslationFailure, hashPassword, type TranslationProvider } from "@gchopro/core";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { uuidv7 } from "uuidv7";
 import { createUser } from "./account-service.js";
@@ -55,10 +55,6 @@ describe("translation", () => {
         },
       })
       .where(eq(settings.key, "translation"));
-    await getDb()
-      .update(messages)
-      .set({ status: "sent", leaseExpiresAt: new Date(0), holdReason: null })
-      .where(inArray(messages.status, ["queued", "held", "scheduled", "dispatched"]));
     await closeDb();
     await closeRedis();
   });
