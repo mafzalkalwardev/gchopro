@@ -5,7 +5,7 @@ Canonical spec: `GChoPro-PRD.md`.
 ## Milestones
 
 - [x] M0: Foundation — scaffold, Compose files, env validation, full Drizzle schema and first migration, seed, pino, CI. Local migrate/seed is unverified until Docker is installed. CI on `m0-foundation` ran lint, typecheck, build, unit tests, audit, gitleaks, migrate, and seed (2026-11-26).
-- [ ] M1: Security and auth baseline — issue [#1](https://github.com/mafzalkalwardev/gchopro/issues/1)
+- [x] M1: Security and auth baseline — issue [#1](https://github.com/mafzalkalwardev/gchopro/issues/1)
 - [ ] M2: Devices and multi-SIM — issue [#2](https://github.com/mafzalkalwardev/gchopro/issues/2)
 - [ ] M3: Users and subscriptions — issue [#3](https://github.com/mafzalkalwardev/gchopro/issues/3)
 - [ ] M4: Messaging core and paced queue — issue [#4](https://github.com/mafzalkalwardev/gchopro/issues/4)
@@ -45,6 +45,7 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-25 — Next `output: "standalone"` is off when `process.platform` is `win32`. The standalone file tracer recreates pnpm symlinks, and this machine returns EPERM. CI on Ubuntu still builds standalone.
 - 2026-11-26 — A password change keeps the current session by setting that session's `created_at` to the new `password_changed_at`. The §11 check rejects every session created before the password change, including the one that submitted it, unless that timestamp moves with the change.
 - 2026-11-26 — `SEED_DEMO_PASSWORD` is optional and read only by the development seed. CI sets it so the portal login test has a known password. It is not required to boot the apps.
+- 2026-11-26 — Admin and portal documents are rendered per request. The CSP nonce has to be minted for that request, or `strict-dynamic` blocks the scripts.
 
 ## Deviations (approved)
 
@@ -52,4 +53,4 @@ None.
 
 ## Known issues
 
-- Docker is not installed on the machine that built M0. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. GitHub Actions on Ubuntu started Compose and completed migrate and seed.
+- Docker is not installed on the machine that built M0 and M1. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. GitHub Actions on Ubuntu started Compose, completed migrate and seed, and passed the browser sign-in test.
