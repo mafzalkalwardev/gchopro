@@ -1,7 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { appendFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import {
   KILL_POLL_MS,
   createLogger,
@@ -45,22 +42,8 @@ const lanes = new Map<string, Lane>();
 
 logger.info(redactForLog({ phase: "m8" }), "worker started");
 
-const tracePath = join(tmpdir(), "gchopro-e2e-worker.log");
-
-function trace(line: string): void {
-  if (process.env.E2E_TRACE !== "1") return;
-  appendFileSync(tracePath, `${new Date().toISOString()} ${line}\n`);
-}
-
-trace("worker started");
-
-const interestingIds = new Set<string>();
-
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
-  if (interestingIds.has(job.data.messageId)) {
-    trace(`processed ${job.data.messageId} ${result.kind}`);
-  }
   if (result.kind === "hold" || result.kind === "wait") {
     if (job.token === undefined) throw new Error("send job has no lock token");
     await job.moveToDelayed(Date.now() + result.delayMs, job.token);
@@ -92,7 +75,6 @@ async function laneFor(simId: string, running: boolean): Promise<Lane> {
 }
 
 async function pump(): Promise<void> {
-  trace("pump enter");
   const killed = await killSwitchOn(getDb());
   await promoteScheduled();
   await sweepLeases();
@@ -102,10 +84,7 @@ async function pump(): Promise<void> {
     await laneFor(sim.simId, running);
     if (!sim.assignable) await holdUnhealthy(sim.simId);
   }
-  if (killed) {
-    trace("pump skipped because sending is paused");
-    return;
-  }
+  if (killed) return;
   const recent = await dueRecent();
   const due = await dueWork();
   const seen = new Set<string>();
@@ -115,43 +94,25 @@ async function pump(): Promise<void> {
     seen.add(item.id);
     ordered.push(item);
   }
-  interestingIds.clear();
-  for (const item of recent) interestingIds.add(item.id);
-  trace(
-    `pump recent=${recent.map((item) => item.id).join(",") || "none"} due=${due.length} sims=${runtime.length}`,
-  );
   for (const item of ordered) {
-    const interesting = interestingIds.has(item.id);
     const sim = runtime.find((row) => row.simId === item.simId);
-    if (sim?.assignable !== true) {
-      if (interesting) trace(`skip ${item.id}`);
-      continue;
-    }
+    if (sim?.assignable !== true) continue;
     const lane = lanes.get(item.simId);
-    if (lane === undefined) {
-      if (interesting) trace(`no lane ${item.id}`);
-      continue;
-    }
+    if (lane === undefined) continue;
     try {
       const existing = await lane.queue.getJob(item.id);
       if (existing) {
         const state = await existing.getState();
         if (state === "failed" || state === "completed") await existing.remove();
-        else {
-          if (interesting) trace(`existing ${item.id} ${state}`);
-          continue;
-        }
+        else continue;
       }
       await lane.queue.add(
         "send",
         { messageId: item.id },
         { jobId: item.id, removeOnComplete: true, removeOnFail: 10 },
       );
-      if (interesting) trace(`enqueued ${item.id}`);
-    } catch (error) {
-      if (interesting) {
-        trace(`enqueue failed ${item.id} ${error instanceof Error ? error.message : "error"}`);
-      }
+    } catch {
+      // The job is already waiting on this SIM queue.
     }
   }
 }
@@ -179,7 +140,6 @@ async function watchKill(): Promise<void> {
 
 void beat();
 function notePumpFailure(error: unknown): void {
-  trace(`pump failed ${error instanceof Error ? error.message : "error"}`);
   logger.error(
     { message: error instanceof Error ? error.message : "pump failed" },
     "pacing pump failed",
@@ -199,9 +159,6 @@ const subscriptions = setInterval(() => {
 const pacing = setInterval(() => {
   exclusive(() => pump());
 }, 2000);
-const alive = setInterval(() => {
-  trace("alive");
-}, 5000);
 const killWatch = setInterval(() => {
   exclusive(() => watchKill());
 }, KILL_POLL_MS);
@@ -309,7 +266,6 @@ const maintenanceWatch = setInterval(() => {
 function stop(signal: string): void {
   clearInterval(subscriptions);
   clearInterval(pacing);
-  clearInterval(alive);
   clearInterval(killWatch);
   clearInterval(healthWatch);
   clearInterval(translationWatch);

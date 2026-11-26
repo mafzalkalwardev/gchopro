@@ -1,8 +1,5 @@
 import { createServer, type Server } from "node:http";
 import { randomBytes } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { decodeBase32IgnorePadding } from "@oslojs/encoding";
 import { generateTOTP } from "@oslojs/otp";
 import {
@@ -112,13 +109,7 @@ async function pollPending(
     await statusPage.reload();
     pageText = (await statusPage.locator("body").innerText()).replace(/\s+/g, " ").slice(0, 400);
   }
-  let workerTrace = "no worker trace";
-  try {
-    workerTrace = readFileSync(join(tmpdir(), "gchopro-e2e-worker.log"), "utf8").slice(-1500);
-  } catch {
-    workerTrace = "no worker trace";
-  }
-  throw new Error(`pending message did not arrive (${seen}) | ${pageText} | ${workerTrace}`);
+  throw new Error(`pending message did not arrive (${seen}) | ${pageText}`);
 }
 
 async function compose(page: Page, to: string, body: string): Promise<void> {

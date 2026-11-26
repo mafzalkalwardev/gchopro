@@ -1,6 +1,3 @@
-import { appendFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { loadEnv } from "@gchopro/core";
 import { eq, inArray } from "drizzle-orm";
 import { closeDb, getDb } from "./client.js";
@@ -22,7 +19,5 @@ const cleared = await db
   .where(inArray(messages.status, ["queued", "held", "scheduled"]))
   .returning({ id: messages.id });
 
-const line = `cleared ${cleared.length} leftover sends`;
-process.stdout.write(`${line}\n`);
-appendFileSync(join(tmpdir(), "gchopro-e2e-worker.log"), `${new Date().toISOString()} ${line}\n`);
+process.stdout.write(`cleared ${cleared.length} leftover sends\n`);
 await closeDb();

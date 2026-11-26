@@ -105,8 +105,6 @@ function shutdown() {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
-process.env.E2E_TRACE = "1";
-
 execFileSync("pnpm", ["--filter", "@gchopro/db", "exec", "tsx", "src/e2e-quiet-queue.ts"], {
   stdio: "inherit",
   env: process.env,
