@@ -1,0 +1,194 @@
+name: gchopro
+
+x-image: &image
+  build:
+    context: ..
+    dockerfile: infra/Dockerfile
+  env_file:
+    - ${GCHOPRO_ENV_FILE:?GCHOPRO_ENV_FILE is required}
+  user: node
+  environment:
+    HOME: /tmp
+    XDG_CACHE_HOME: /tmp
+    COREPACK_HOME: /tmp
+  networks: [gcho]
+
+services:
+  caddy:
+    image: caddy:2.10
+    entrypoint: ["sh", "/entrypoint.sh"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PORTAL_HOST: ${PORTAL_HOST:?PORTAL_HOST is required}
+      GATEWAY_HOST: ${GATEWAY_HOST:?GATEWAY_HOST is required}
+      ADMIN_HOST: ${ADMIN_HOST:?ADMIN_HOST is required}
+      ADMIN_IP_ALLOWLIST: ${ADMIN_IP_ALLOWLIST:?ADMIN_IP_ALLOWLIST is required}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/entrypoint.sh:/entrypoint.sh:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      admin:
+        condition: service_healthy
+      portal:
+        condition: service_healthy
+    networks: [gcho]
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16@sha256:07abc3f43c9395b0bdbbab36bc25ddb0e8d83cd4fcafb5fb7d6abe14ff156dd8
+    environment:
+      POSTGRES_USER: gchopro_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: gchopro
+      GCHOPRO_APP_PASSWORD: ${GCHOPRO_APP_PASSWORD:?GCHOPRO_APP_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gchopro_owner -d gchopro"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [gcho]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7@sha256:6b645a37f49b0546582468706b32e71a8b7fbb5ba4583d0f9e27a8004716b738
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "${REDIS_PASSWORD:?REDIS_PASSWORD is required}",
+      ]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli -a "$$REDIS_PASSWORD" ping | grep PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [gcho]
+    restart: unless-stopped
+
+  migrate:
+    <<: *image
+    command: ["pnpm", "--filter", "@gchopro/db", "exec", "tsx", "src/migrate.ts"]
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  admin:
+    <<: *image
+    command:
+      [
+        "pnpm",
+        "--filter",
+        "@gchopro/admin",
+        "exec",
+        "next",
+        "start",
+        "--port",
+        "3001",
+        "--hostname",
+        "0.0.0.0",
+      ]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/apps/admin/.next/cache
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  portal:
+    <<: *image
+    command:
+      [
+        "pnpm",
+        "--filter",
+        "@gchopro/portal",
+        "exec",
+        "next",
+        "start",
+        "--port",
+        "3000",
+        "--hostname",
+        "0.0.0.0",
+      ]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/apps/portal/.next/cache
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  worker:
+    <<: *image
+    command: ["pnpm", "--filter", "@gchopro/worker", "exec", "node", "dist/index.js"]
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.kill(1,0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    restart: unless-stopped
+
+networks:
+  gcho:
+
+volumes:
+  pgdata:
+  redisdata:
+  caddydata:
+  caddyconfig:

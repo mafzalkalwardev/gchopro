@@ -23,4 +23,5 @@ live:
 - Product work follows milestones M0–M8 in GChoPro-PRD.md §24. Phases 4–10 stay open until those milestones cover them.
 - M0 is foundation only. Screens, media, the SEO README, deploy, and graphify are later.
 - Local Docker is not installed. Compose migrate and seed are checked in CI, not on this machine.
+- M8 is the deployment milestone: production compose, backups, retention, and the runbook. The image and restore test run in CI.
 - M1 is security and auth. Browser e2e is HTTPS on `admin.localhost` and `portal.localhost` and runs in CI.

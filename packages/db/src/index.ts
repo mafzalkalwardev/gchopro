@@ -29,9 +29,13 @@ export {
   deliverPendingAlerts,
   listAlerts,
   sendAlertTest,
+  raiseOpsAlert,
+  resolveOpsAlert,
   sweepDeviceAlerts,
   syncDeviceAlert,
 } from "./alerts-service.js";
+export { readBackup, recordBackup, runBackupJob, runRestoreTest } from "./backup-service.js";
+export { deleteUserData, purgeRetention } from "./retention.js";
 export { createOptOut, listOptOuts, reverseOptOut } from "./compliance.js";
 export { consumeLimit } from "./limits.js";
 export type { AdminActor } from "./device-shared.js";

@@ -1,5 +1,7 @@
 # Security policy
 
+The product security model is in `docs/SECURITY.md`.
+
 ## Reporting
 
 Use GitHub private vulnerability reporting on this repository.
@@ -9,8 +11,8 @@ Do not include exploit details, credentials, or live customer data.
 ## Supported versions
 
 | Version | Supported |
-| --- | --- |
-| 0.1.x | yes |
+| ------- | --------- |
+| 0.1.x   | yes       |
 
 ## Secrets
 

@@ -19,6 +19,11 @@ function list(value: string | undefined): string[] {
 }
 
 export function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname === "/healthz") {
+    return new NextResponse("ok", {
+      headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+    });
+  }
   const host = hostnameOf(request.headers.get("host"));
   const expected = (process.env.ADMIN_HOST ?? "").toLowerCase();
   if (host === null || expected.length === 0 || host !== expected) {

@@ -23,27 +23,37 @@ execFileSync("openssl", [
   "-subj",
   "/CN=localhost",
   "-addext",
-  "subjectAltName=DNS:admin.localhost,DNS:portal.localhost,DNS:localhost,IP:127.0.0.1",
+  "subjectAltName=DNS:admin.localhost,DNS:portal.localhost,DNS:gw.localhost,DNS:localhost,IP:127.0.0.1",
 ]);
 
+const children = [];
+let stopping = false;
+
+function track(child) {
+  children.push(child);
+  return child;
+}
+
 function startApp(filter, port) {
-  const child = spawn(
-    "pnpm",
-    [
-      "--filter",
-      filter,
-      "exec",
-      "next",
-      "start",
-      "--port",
-      String(port),
-      "--hostname",
-      "127.0.0.1",
-    ],
-    { stdio: "inherit", env: process.env, shell: true },
+  const child = track(
+    spawn(
+      "pnpm",
+      [
+        "--filter",
+        filter,
+        "exec",
+        "next",
+        "start",
+        "--port",
+        String(port),
+        "--hostname",
+        "127.0.0.1",
+      ],
+      { stdio: "inherit", env: process.env, shell: true },
+    ),
   );
   child.on("exit", (code) => {
-    if (code !== 0 && code !== null) process.exit(code);
+    if (!stopping && code !== 0 && code !== null) process.exit(code);
   });
 }
 
@@ -70,7 +80,31 @@ function proxy(listenPort, targetPort) {
   }).listen(listenPort, "127.0.0.1");
 }
 
+function startWorker() {
+  const child = track(
+    spawn("pnpm", ["--filter", "@gchopro/worker", "exec", "tsx", "src/index.ts"], {
+      stdio: "inherit",
+      env: process.env,
+      shell: true,
+    }),
+  );
+  child.on("exit", (code) => {
+    if (!stopping && code !== 0 && code !== null) process.exit(code);
+  });
+}
+
+function shutdown() {
+  if (stopping) return;
+  stopping = true;
+  for (const child of children) child.kill("SIGTERM");
+  process.exit(0);
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+
 startApp("@gchopro/admin", 3101);
 startApp("@gchopro/portal", 3100);
+startWorker();
 proxy(3001, 3101);
 proxy(3000, 3100);

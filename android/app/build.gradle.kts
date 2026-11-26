@@ -3,6 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val keystorePath = System.getenv("GCHOPRO_KEYSTORE")
+val keystorePassword = System.getenv("GCHOPRO_KEYSTORE_PASSWORD")
+val releaseAlias = System.getenv("GCHOPRO_KEY_ALIAS")
+val releasePassword = System.getenv("GCHOPRO_KEY_PASSWORD")
+
 android {
     namespace = "com.gchopro.gateway"
     compileSdk = 34
@@ -15,9 +20,23 @@ android {
         versionName = "2.0.0"
     }
 
+    signingConfigs {
+        create("release") {
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                keyAlias = releaseAlias
+                keyPassword = releasePassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            if (!keystorePath.isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

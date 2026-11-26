@@ -22,6 +22,7 @@ import { and, desc, eq, gte, inArray, lt, lte, sql, type SQL } from "drizzle-orm
 import { appendAudit } from "./audit.js";
 import { getDb } from "./client.js";
 import { openSeal, type AdminActor } from "./device-shared.js";
+import { readBackup } from "./backup-service.js";
 import { getRedis } from "./redis.js";
 import { messages, settings, sims, statsDaily, users } from "./schema.js";
 
@@ -152,7 +153,7 @@ export async function systemHealth(): Promise<{
   redis: boolean;
   worker: { lastBeatAt: string | null };
   queues: { simId: string; queued: number; held: number }[];
-  backup: { lastAt: null; restoreTestAt: null };
+  backup: { lastAt: string | null; restoreTestAt: string | null };
 }> {
   let dbOk = false;
   try {
@@ -173,6 +174,17 @@ export async function systemHealth(): Promise<{
     .select({ simId: messages.simId, status: messages.status })
     .from(messages)
     .where(inArray(messages.status, ["queued", "held"]));
+  let backup: { lastAt: string | null; restoreTestAt: string | null } = {
+    lastAt: null,
+    restoreTestAt: null,
+  };
+  if (redisOk) {
+    try {
+      backup = await readBackup();
+    } catch {
+      backup = { lastAt: null, restoreTestAt: null };
+    }
+  }
   const queues = new Map<string, { simId: string; queued: number; held: number }>();
   for (const row of queued) {
     const bucket = queues.get(row.simId) ?? { simId: row.simId, queued: 0, held: 0 };
@@ -185,7 +197,7 @@ export async function systemHealth(): Promise<{
     redis: redisOk,
     worker: { lastBeatAt },
     queues: [...queues.values()],
-    backup: { lastAt: null, restoreTestAt: null },
+    backup,
   };
 }
 

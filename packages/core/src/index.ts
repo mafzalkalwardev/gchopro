@@ -179,6 +179,7 @@ export {
   type SeriesPoint,
   type StatEvent,
 } from "./analytics/series.js";
+export { maintenanceClock, maintenanceDue, type MaintenanceDue } from "./ops/maintenance.js";
 export {
   assignSim,
   disableSubscription,

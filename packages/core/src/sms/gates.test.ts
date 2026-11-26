@@ -128,7 +128,7 @@ describe("paced dispatch", () => {
     expect(retryPlan({ failureClass: "transient", attempts: 1, deliveryFailed: true }).retry).toBe(
       false,
     );
-    expect(simQueueName(sameSim)).toBe("send:sim:sim-a");
+    expect(simQueueName(sameSim)).toBe("send-sim-sim-a");
   });
 
   it("dispatches a scheduled message only after its time", () => {

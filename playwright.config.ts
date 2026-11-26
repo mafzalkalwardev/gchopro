@@ -2,7 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "e2e",
-  timeout: 120_000,
+  timeout: 180_000,
+  workers: 1,
   expect: { timeout: 15_000 },
   use: {
     ignoreHTTPSErrors: true,

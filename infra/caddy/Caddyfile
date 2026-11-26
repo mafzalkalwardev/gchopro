@@ -1,0 +1,47 @@
+{$PORTAL_HOST} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	request_body {
+		max_size 2MB
+	}
+	reverse_proxy portal:3000
+}
+
+{$GATEWAY_HOST} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	request_body {
+		max_size 2MB
+	}
+	@devices path_regexp ^/api/devices(/.*)?$
+	handle @devices {
+		reverse_proxy portal:3000
+	}
+	handle {
+		respond "Not found" 404
+	}
+}
+
+{$ADMIN_HOST} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	request_body {
+		max_size 2MB
+	}
+	@allowed remote_ip {$ADMIN_IP_ALLOWLIST}
+	handle @allowed {
+		reverse_proxy admin:3001
+	}
+	handle {
+		respond "Not found" 404
+	}
+}

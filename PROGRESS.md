@@ -12,15 +12,77 @@ Canonical spec: `GChoPro-PRD.md`.
 - [x] M5: SIM health, alerts, compliance — issue [#5](https://github.com/mafzalkalwardev/gchopro/issues/5)
 - [x] M6: Translation — issue [#6](https://github.com/mafzalkalwardev/gchopro/issues/6)
 - [x] M7: Analytics and remaining features — issue [#7](https://github.com/mafzalkalwardev/gchopro/issues/7)
-- [ ] M8: Hardening, deployment, docs — issue [#8](https://github.com/mafzalkalwardev/gchopro/issues/8)
+- [x] M8: Hardening, deployment, docs — issue [#8](https://github.com/mafzalkalwardev/gchopro/issues/8). CI on `bf373f9` passed the lifecycle browser test, the backup restore, the production compose check, and the image build (2026-11-26).
 
 ## §22.2 acceptance
 
-Product checklists stay open. M0 only covers the repo-hygiene line inside Security:
+Checked boxes are assertions from the unit, integration, or browser suite on CI. Unchecked boxes are not asserted, so they stay open.
 
-- [ ] gitleaks is clean. `.env.example` has no values. Production containers run as non-root, and Postgres and Redis are not exposed.
+**Devices and multi-SIM**
 
-  Verified in M0: `.env.example` assignments are empty (`packages/core/src/env.test.ts`). gitleaks runs in CI and as a lefthook pre-commit hook. Production containers, closed ports, and the rest of this line are M8.
+- [x] The admin generates a pairing code. The simulated device registers with protocol v2. A protocol v1 register gets 426.
+- [x] A SIM report with 2 SIMs creates 2 `sims` rows. Re-reporting with a changed `subscriptionId` but the same slot, carrier and number reconciles to the same row.
+- [ ] Removing a SIM from the report marks it `inactive` and shows "line unavailable" to its user.
+- [ ] The capacity page shows slots, active, assigned and free correctly. User creation only offers free active SIMs.
+- [ ] Inbound messages with `subscriptionId` are routed to the user who owns that SIM. Unknown subscriptions go to the unroutable list and raise an alert.
+- [ ] Inbox dedupe is per `(device_id, provider_id)`. Two devices with the same `_ID` do not collide.
+- [ ] Token rotation works, with a 10-minute grace period for the old token. A retired device gets 401 `device_revoked`.
+
+**Users, sessions, subscriptions**
+
+- [x] The admin creates a user with a generated password, shown once. The first login forces a password change and AUP acceptance.
+- [ ] An admin password reset revokes all of the user's sessions. An open portal tab redirects to login within 5 s, the old cookie returns 401, and the old password fails.
+- [ ] Disabling a user or subscription, an expiry, or unassigning a SIM each revoke sessions with the correct reason message.
+- [x] Subscriptions by day, week, month and year compute `ends_at` correctly in the user's timezone. Pause and resume preserve the remaining time. Extend works from active and expired.
+- [x] The expiry reminder appears 3 days before (once). Expired users with `read_only` can log in but cannot send.
+- [x] Payments can be recorded and voided, and both are audit-logged.
+
+**Messaging and pacing**
+
+- [x] A one-to-one send creates the conversation and message, the paced dispatch, the device report, and status updates live in the thread.
+- [ ] A group send of N recipients creates N messages on the same SIM queue. Opted-out recipients are reported as blocked, and the cap on recipients is enforced.
+- [x] Consecutive dispatches on one SIM are separated by `base ± jitter` (never below the floor). Two SIMs dispatch independently.
+- [ ] Per-minute, per-hour and per-day caps and segments per day hold messages (or reject, per policy). Usage gauges reflect the counters.
+- [x] Messages queued outside the send window are held until it opens.
+- [ ] The kill switch (global, device, SIM) stops new dispatches within 2 s, and resuming continues in order.
+- [x] Transient failures retry at most twice on the **same SIM**. Suspension-signal and permanent failures never retry. No code path moves messages between SIMs.
+- [x] The segment counter matches the reference vectors for GSM-7, extension characters, UCS-2 and emoji.
+- [x] A scheduled send dispatches at or after the scheduled time, subject to every gate.
+- [x] Templates with variables render. Missing variables give 422.
+
+**SIM health and alerts**
+
+- [x] Failure names are classified per §14.2.
+- [x] 2 suspension signals in 24 h, or 3 consecutive failures in service, give `suspected_suspended`: the SIM queue is paused, the portal banner is shown, a critical alert is created, and an email and Telegram message are sent (mocked in tests).
+- [x] Resuming from `suspected_suspended` is only possible through a successful re-test. A failed re-test keeps the state.
+- [x] Device offline and battery-low alerts fire and auto-resolve. Dedupe prevents duplicates.
+
+**Translation**
+
+- [x] With zh→en enabled, a Chinese outbound message is sent in English (wire), stores the original, and the thread shows both through the toggle.
+- [x] An English inbound message is shown in Chinese, with the original available.
+- [x] A provider failure holds the outbound message, and after the timeout the user can send it untranslated explicitly.
+- [ ] The provider can be switched in Settings (DeepL, Google, LibreTranslate, none), with a test button.
+
+**Analytics**
+
+- [x] Per-user and per-SIM charts show sent, received, delivered, failed, delivery ratio and average delivery time for the chosen range.
+- [x] Re-test messages are excluded. CSV export is escaped against formula injection.
+
+**Security**
+
+- [ ] Admin access requires the allowlisted IP (others get 404), the correct host, and TOTP. Sudo mode is enforced for sensitive actions.
+- [x] Passwords are stored as argon2id. Lockout applies after 5 failures.
+- [ ] CSRF is rejected without the header or with a cross-origin `Origin`. The CSP header is present with a nonce, and no inline script runs.
+- [ ] Encrypted columns contain no plaintext (an integration test reads the raw DB). The blind index lookup works.
+- [ ] The audit log records every admin mutation, redaction is applied, and chain verification passes (and fails after tampering).
+- [x] gitleaks is clean. `.env.example` has no values. Production containers run as non-root, and Postgres and Redis are not exposed.
+
+**Compliance**
+
+- [x] STOP, 退订 and the other keywords create an opt-out, cancel pending messages to that number, optionally send one confirmation, and block future sends. START or 订阅 reverses keyword opt-outs.
+- [ ] Contacts require a consent source. CSV import rejects rows without one and flags opted-out numbers.
+- [ ] The signature is appended when enabled and counted in segments.
 
 ## Decisions
 
@@ -84,6 +146,16 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-26 — `stats:rollup` runs every 5 minutes inside the worker and rewrites today and yesterday in `stats_daily`. Re-test rows are left out. CI does not start the worker, so the analytics test calls the rollup directly.
 - 2026-11-26 — Interface language is a `gcho_locale` cookie and the en / zh-CN catalog in `@gchopro/core/i18n`. Dark mode swaps the ink and paper tokens from a `gcho_theme` cookie. Web push stays off; a new message can play a sound or raise an in-tab notification. Backup jobs stay in M8, so system health shows that none has been recorded.
 - 2026-11-26 — The portal is installable when the manifest, 192 and 512 icons, and a fetch-handling service worker are present. CI checks those. A full Lighthouse score is not a CI job.
+- 2026-11-26 — Retention nulls message bodies and translations older than `settings.retention.message_body_days`, and clears conversation previews whose last message is older than that cutoff. Metadata stays. An admin sudo action anonymizes one portal user's messages, contacts, and group names without deleting the user row.
+- 2026-11-26 — Backups are age-encrypted custom dumps copied with rclone. Redis is not backed up. The worker runs them only when `BACKUP_ENABLED=true`. The schedule is Asia/Karachi: backup during the 02:00 hour, retention during the 03:00 hour, and the restore test during the Sunday 04:00 hour. A Redis lock runs each job once per day. CI calls the scripts itself because the CI worker leaves `BACKUP_ENABLED` unset.
+- 2026-11-26 — A re-test is the only send accepted while a SIM is `suspected_suspended`. It stays on that SIM. The worker lane stays open so the re-test can dispatch. Ordinary messages on that SIM are still held. This is the recovery path. It does not move a blocked SIM's messages.
+- 2026-11-26 — Production TLS is the Caddyfile. There is no rate-limit plugin. The admin allowlist is comma-separated in the env file and space-separated in Caddy. A public SSL Labs grade was not scanned.
+- 2026-11-26 — The first production admin is seeded with `APP_ENV=staging`. Seed still refuses `APP_ENV=production`. Demo users stay limited to development. `GET /healthz` is answered by middleware before the host and admin IP checks so a container can probe `127.0.0.1`. Caddy still applies the admin allowlist before a request reaches the admin app.
+- 2026-11-26 — One image builds the workspace and runs `next start` and `tsx src/migrate.ts`. Migrate stays on source because the compiled path does not find the SQL files. Caddy is `caddy:2.10` without a digest pin.
+- 2026-11-26 — Playwright runs one worker. The lifecycle test signs in as `ops`, seeded only when `SEED_OPS_PASSWORD` is set, so it does not share the admin or demo1 password with the auth test.
+- 2026-11-26 — BullMQ 6 rejects a colon in a queue name. Each SIM still has its own queue at concurrency 1. The name is `send-sim-{id}` rather than `send:sim:{id}`. Jobs are still never moved to another SIM.
+- 2026-11-26 — BullMQ 6 also rejects a custom job id with a single colon. Translation jobs use `{role}-{messageId}`.
+- 2026-11-26 — The worker image installs the Postgres 16 client. Bookworm's default client is 15 and cannot dump this server. Restore drops `SET transaction_timeout` because a Postgres 17 or newer client writes it and Postgres 16 rejects it.
 
 ## Deviations (approved)
 
@@ -91,4 +163,4 @@ None.
 
 ## Known issues
 
-- Docker is not installed on the machine that built M0 through M7. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M7 analytics, usage chart, inbox filters, support view, and system health screens were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the browser sign-in test.
+- Docker is not installed on the machine that built M0 through M8. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M7 analytics, usage chart, inbox filters, support view, and system health screens were not clicked in a local browser. The M8 delete-data button and the backup line on system health were not clicked either. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests, the browser tests, the backup restore, and the production image build. A public SSL Labs grade was not scanned, and a real phone was not used.

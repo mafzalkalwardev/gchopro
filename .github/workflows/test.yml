@@ -55,6 +55,30 @@ jobs:
           set +a
           pnpm exec playwright install --with-deps chromium
           pnpm exec playwright test
+      - name: Backup and restore test
+        run: |
+          set -a
+          . ./.env
+          set +a
+          sudo apt-get update
+          sudo apt-get install -y age rclone postgresql-client
+          age-keygen -o "$RUNNER_TEMP/age.key"
+          recipient="$(age-keygen -y "$RUNNER_TEMP/age.key")"
+          export BACKUP_AGE_RECIPIENT="$recipient"
+          export BACKUP_AGE_IDENTITY="$RUNNER_TEMP/age.key"
+          export BACKUP_DIR="$RUNNER_TEMP/backups"
+          export BACKUP_RCLONE_REMOTE=":local:$RUNNER_TEMP/remote"
+          mkdir -p "$BACKUP_DIR" "$RUNNER_TEMP/remote"
+          bash infra/backup/backup.sh
+          bash infra/backup/restore-test.sh
+      - name: Production compose config
+        run: |
+          GCHOPRO_ENV_FILE="$PWD/.env" docker compose -f infra/docker-compose.prod.yml --env-file .env config --format json > "$RUNNER_TEMP/prod-compose.json"
+          node scripts/check-prod-compose.mjs "$RUNNER_TEMP/prod-compose.json"
+      - name: Production image
+        run: |
+          docker build -f infra/Dockerfile -t gchopro:ci .
+          docker run --rm --read-only --tmpfs /tmp --user node gchopro:ci bash -c 'pg_dump --version | grep -q " 16\." && node -e "console.log(\"ready\")"'
   android:
     runs-on: ubuntu-latest
     steps:

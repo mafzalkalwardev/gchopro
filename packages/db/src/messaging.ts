@@ -883,7 +883,10 @@ export async function processSend(
     killSwitch: await killSwitchOn(db),
     devicePaused: device.paused,
     simPaused: sim.pausedByAdmin,
-    simAssignable: sim.health === "active" && sim.activeOnDevice && device.status === "active",
+    simAssignable:
+      (sim.health === "active" || (message.isRetest && sim.health === "suspected_suspended")) &&
+      sim.activeOnDevice &&
+      device.status === "active",
     userActive: message.isRetest || (user.status === "active" && user.deletedAt === null),
     subscriptionActive: message.isRetest || subscriptionStatus === "active",
     optedOut:
@@ -1170,7 +1173,7 @@ export async function simRuntime(): Promise<{ simId: string; assignable: boolean
   return rows.map((row) => ({
     simId: row.sim.id,
     assignable:
-      row.sim.health === "active" &&
+      (row.sim.health === "active" || row.sim.health === "suspected_suspended") &&
       row.sim.activeOnDevice &&
       !row.sim.pausedByAdmin &&
       row.device.status === "active" &&

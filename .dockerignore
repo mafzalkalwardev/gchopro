@@ -1,0 +1,15 @@
+.git
+.github
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+android
+e2e
+**/*.jks
+**/*.keystore
+android/keystore.properties
