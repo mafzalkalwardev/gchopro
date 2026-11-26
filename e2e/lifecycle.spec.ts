@@ -342,6 +342,10 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     await compose(portalPage, peer, "你好");
     await portalPage.waitForURL("**/c/**");
     await expect(portalPage.getByText("你好")).toBeVisible();
+    console.log(`thread now ${await portalPage.locator("ol li p").first().innerText()}`);
+    await portalPage.waitForTimeout(4_000);
+    await portalPage.reload();
+    console.log(`thread later ${await portalPage.locator("ol li p").first().innerText()}`);
     const outbound = await pollPending(
       request,
       device.id,

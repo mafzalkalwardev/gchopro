@@ -40,6 +40,7 @@ type Lane = { queue: Queue; worker: Worker };
 const lanes = new Map<string, Lane>();
 
 logger.info(redactForLog({ phase: "m8" }), "worker started");
+process.stderr.write("worker started\n");
 
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
