@@ -38,6 +38,15 @@ export function SettingsForms(props: {
   content: { blocked_keywords: string; block_urls: boolean };
   testNumbers: string;
   alerts: { emailEnabled: boolean; emailTo: string; telegramEnabled: boolean; chatId: string };
+  translation: {
+    provider: "none" | "deepl" | "google" | "libretranslate";
+    preview: boolean;
+    deeplPlan: "free" | "pro";
+    libreUrl: string;
+    deeplConfigured: boolean;
+    googleConfigured: boolean;
+    libreConfigured: boolean;
+  };
 }) {
   const [message, setMessage] = useState("");
 
@@ -54,6 +63,135 @@ export function SettingsForms(props: {
 
   return (
     <div className="mt-8 grid max-w-xl gap-10">
+      <form
+        className="grid gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const form = new FormData(event.currentTarget);
+          const libre = String(form.get("libreUrl") ?? "").trim();
+          void (async () => {
+            const sudo = await fetch("/api/admin/auth/sudo", {
+              method: "POST",
+              headers: { "content-type": "application/json", "x-csrf-token": csrf() },
+              body: JSON.stringify({
+                password: String(form.get("password") ?? ""),
+                code: String(form.get("code") ?? ""),
+              }),
+            });
+            if (!sudo.ok) {
+              setMessage("Sudo was not granted.");
+              return;
+            }
+            setMessage(
+              await save("translation", {
+                provider: String(form.get("provider") ?? "none"),
+                deepl: { plan: String(form.get("deeplPlan") ?? "free") },
+                google: {},
+                libretranslate: { url: libre.length > 0 ? libre : null },
+                preview_before_send: form.get("preview") === "on",
+              }),
+            );
+          })();
+        }}
+      >
+        <h2 className="font-display text-2xl">Translation</h2>
+        <p className="font-body text-sm">
+          Keys stay in the environment. DeepL {props.translation.deeplConfigured ? "is" : "is not"}{" "}
+          configured. Google {props.translation.googleConfigured ? "is" : "is not"} configured.
+          LibreTranslate {props.translation.libreConfigured ? "is" : "is not"} configured.
+        </p>
+        <label className="font-body text-sm">
+          Provider
+          <select
+            className="mt-1 block w-full border border-ink/20 bg-paper px-3 py-2"
+            name="provider"
+            defaultValue={props.translation.provider}
+          >
+            <option value="none">None</option>
+            <option value="deepl">DeepL</option>
+            <option value="google">Google</option>
+            <option value="libretranslate">LibreTranslate</option>
+          </select>
+        </label>
+        <label className="font-body text-sm">
+          DeepL plan
+          <select
+            className="mt-1 block w-full border border-ink/20 bg-paper px-3 py-2"
+            name="deeplPlan"
+            defaultValue={props.translation.deeplPlan}
+          >
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+          </select>
+        </label>
+        <label className="font-body text-sm">
+          LibreTranslate URL
+          <input
+            className="mt-1 block w-full border border-ink/20 bg-paper px-3 py-2"
+            name="libreUrl"
+            defaultValue={props.translation.libreUrl}
+          />
+        </label>
+        <label className="font-body text-sm">
+          <input name="preview" type="checkbox" defaultChecked={props.translation.preview} />{" "}
+          Preview before send
+        </label>
+        <input
+          className="border border-ink/20 bg-paper px-3 py-2"
+          name="password"
+          type="password"
+          placeholder="Your password"
+          required
+        />
+        <input
+          className="border border-ink/20 bg-paper px-3 py-2"
+          name="code"
+          placeholder="Authenticator code"
+          inputMode="numeric"
+          pattern="[0-9]{6}"
+          required
+        />
+        <div className="flex gap-3">
+          <button className="w-fit bg-ink px-4 py-2 text-paper" type="submit">
+            Save translation
+          </button>
+          <button
+            className="w-fit border border-ink px-4 py-2"
+            type="button"
+            onClick={(event) => {
+              const formElement = event.currentTarget.form;
+              if (formElement === null) return;
+              const form = new FormData(formElement);
+              void (async () => {
+                const sudo = await fetch("/api/admin/auth/sudo", {
+                  method: "POST",
+                  headers: { "content-type": "application/json", "x-csrf-token": csrf() },
+                  body: JSON.stringify({
+                    password: String(form.get("password") ?? ""),
+                    code: String(form.get("code") ?? ""),
+                  }),
+                });
+                if (!sudo.ok) {
+                  setMessage("Sudo was not granted.");
+                  return;
+                }
+                const response = await fetch("/api/admin/settings/translation/test", {
+                  method: "POST",
+                  headers: { "x-csrf-token": csrf() },
+                });
+                const payload = (await response.json().catch(() => ({}))) as {
+                  data?: { ok?: boolean };
+                };
+                setMessage(
+                  payload.data?.ok === true ? "Provider test passed." : "Provider test failed.",
+                );
+              })();
+            }}
+          >
+            Test provider
+          </button>
+        </div>
+      </form>
       <form className="grid gap-3" onSubmit={onHealth}>
         <h2 className="font-display text-2xl">Health</h2>
         <label className="font-body text-sm">

@@ -134,6 +134,22 @@ export {
 } from "./health/machine.js";
 export { countSegments, isTooLong, MAX_SEGMENTS, type SegmentCount } from "./sms/segments.js";
 export { POLICY_TEXT, confirmationLanguage, matchingKeyword } from "./compliance/keywords.js";
+export { detectLanguage } from "./translation/detect.js";
+export {
+  TranslationFailure,
+  buildProvider,
+  translateReliably,
+  type FetchLike,
+} from "./translation/providers.js";
+export {
+  asLang,
+  translationApplies,
+  type Lang,
+  type TranslationChoice,
+  type TranslationProvider,
+  type TranslationRequest,
+  type TranslationResult,
+} from "./translation/types.js";
 export {
   alertText,
   batteryLowOpen,

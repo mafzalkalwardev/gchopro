@@ -38,6 +38,12 @@ import {
   seal,
 } from "./device-shared.js";
 import { requireReady } from "./login.js";
+import {
+  outboundReady,
+  previewTranslation,
+  threadTranslations,
+  translationPending,
+} from "./translation-service.js";
 import { publishUser } from "./redis.js";
 import {
   alerts,
@@ -105,6 +111,7 @@ function safeMessage(code: keyof typeof SAFE_TEXT): string {
   if (code === "line_unavailable") return SAFE_TEXT.line_unavailable;
   if (code === "kill_switch") return SAFE_TEXT.kill_switch;
   if (code === "missing_variables") return SAFE_TEXT.missing_variables;
+  if (code === "translation_unavailable") return SAFE_TEXT.translation_unavailable;
   if (code === "user_disabled") return SAFE_TEXT.user_disabled;
   if (code === "subscription_inactive") return SAFE_TEXT.subscription_inactive;
   if (code === "not_found") return SAFE_TEXT.not_found;
@@ -245,6 +252,7 @@ async function lineOf(userId: string) {
 async function composeText(
   userId: string,
   input: { body: string; templateId?: string; variables?: Record<string, string> },
+  options?: { sign?: boolean },
 ) {
   let source = input.body;
   let templateId: string | null = null;
@@ -267,10 +275,13 @@ async function composeText(
   const rendered = renderTemplate(source, input.variables ?? {});
   if (!rendered.ok) reject(422, "missing_variables");
   const signature = settingSchemas.sender_signature.safeParse(await rawSetting("sender_signature"));
-  const text = applySignature(
-    rendered.text,
-    signature.success ? signature.data : { enabled: false, text: "" },
-  );
+  const text =
+    options?.sign === false
+      ? rendered.text
+      : applySignature(
+          rendered.text,
+          signature.success ? signature.data : { enabled: false, text: "" },
+        );
   const counted = countSegments(text);
   if (isTooLong(counted)) reject(422, "too_long");
   return { text, counted, templateId };
@@ -302,11 +313,29 @@ export async function previewMessage(
   input: { body: string; templateId?: string; variables?: Record<string, string> },
 ) {
   const session = await sender(token);
-  const prepared = await composeText(session.userId, input);
+  const owners = await getDb().select().from(users).where(eq(users.id, session.userId)).limit(1);
+  const user = owners[0];
+  if (user === undefined) reject(404, "not_found");
+  const pending = await translationPending(user);
+  const prepared = await composeText(session.userId, input, { sign: !pending });
+  if (pending) {
+    const translated = await previewTranslation(user, prepared.text);
+    if (translated !== null) {
+      const counted = countSegments(translated.text);
+      if (isTooLong(counted)) reject(422, "too_long");
+      return {
+        text: translated.text,
+        segments: counted.segments,
+        encoding: counted.encoding,
+        translated: true,
+      };
+    }
+  }
   return {
     text: prepared.text,
     segments: prepared.counted.segments,
     encoding: prepared.counted.encoding,
+    translated: false,
   };
 }
 
@@ -319,7 +348,8 @@ export async function sendMessage(token: string | undefined, input: SendBody) {
   const { user, sim, device } = await lineOf(session.userId);
   if (!sim.activeOnDevice || sim.health !== "active" || sim.pausedByAdmin)
     reject(422, "line_unavailable");
-  const prepared = await composeText(session.userId, input);
+  const pending = await translationPending(user);
+  const prepared = await composeText(session.userId, input, { sign: !pending });
   const peer = normalizePhone(input.to, await readRegion(getDb()));
   const hash = indexPhone(peer);
   if (await optedOut(hash, user.id)) reject(422, "opted_out");
@@ -524,7 +554,8 @@ export async function sendGroup(token: string | undefined, input: GroupSendBody)
   const { user, sim, device } = await lineOf(session.userId);
   if (!sim.activeOnDevice || sim.health !== "active" || sim.pausedByAdmin)
     reject(422, "line_unavailable");
-  const prepared = await composeText(session.userId, input);
+  const pending = await translationPending(user);
+  const prepared = await composeText(session.userId, input, { sign: !pending });
   const policy = asPolicy(await policyRow(user.rateLimitPolicyId));
   const unique = [...new Set(await groupNumbers(session.userId, input))];
   if (unique.length > policy.maxGroupRecipients) reject(422, "limit_reached");
@@ -674,8 +705,23 @@ export async function listThread(token: string | undefined, id: string) {
     archived: conversation.archived,
     tags: conversation.tags,
     optedOut: await optedOut(conversation.peerNumberHash, session.userId),
-    messages: thread.map(viewOf),
+    messages: await presentThread(thread),
   };
+}
+
+async function presentThread(thread: MessageRow[]) {
+  const extra = await threadTranslations(thread.map((row) => row.id));
+  return thread.map((row) => {
+    const view = viewOf(row);
+    const item = extra.get(row.id);
+    return {
+      ...view,
+      original: item?.original ?? view.body,
+      translated: item?.translated ?? null,
+      preferred: row.direction === "in" ? ("translated" as const) : ("original" as const),
+      translationUnavailable: item?.unavailable ?? false,
+    };
+  });
 }
 
 export async function markRead(token: string | undefined, id: string) {
@@ -820,12 +866,12 @@ export async function processSend(
   });
   const rules = settingSchemas.content_rules.safeParse(await rawSetting("content_rules"));
   const body = openSeal(`messages.wire_body_enc.${message.id}`, message.wireBodyEnc) ?? "";
-  const translation = settingSchemas.translation.safeParse(await rawSetting("translation"));
   const translationRequired =
+    message.direction === "out" &&
     !message.isRetest &&
-    user.translationEnabled &&
-    translation.success &&
-    translation.data.provider !== "none";
+    !message.isOptOutConfirmation &&
+    (await translationPending(user));
+  const translationReady = translationRequired ? await outboundReady(message.id) : true;
   const counts = message.isRetest
     ? { minute: 0, hour: 0, day: 0, segments: 0 }
     : await readCaps("u", user.id, now.getTime());
@@ -860,7 +906,7 @@ export async function processSend(
     nextSendAt: sim.nextSendAt,
     deviceOnline: online,
     translationRequired,
-    translationReady: false,
+    translationReady,
     translationStartedAt: message.queuedAt,
   });
   if (!message.isRetest && simRow && decision.kind === "dispatch") {

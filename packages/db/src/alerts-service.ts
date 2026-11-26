@@ -8,12 +8,12 @@ import {
   settingSchemas,
   type AlertSeverity,
 } from "@gchopro/core";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, gte, isNotNull, isNull } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import { getDb } from "./client.js";
 import { readHealth } from "./device-shared.js";
 import { requireReady } from "./login.js";
-import { alerts, devices, settings } from "./schema.js";
+import { alerts, devices, messageTranslations, settings } from "./schema.js";
 
 export type AlertTransport = {
   email: (input: { to: string[]; subject: string; text: string }) => Promise<void>;
@@ -53,7 +53,8 @@ async function openAlert(input: {
     | "device_battery_low"
     | "sim_suspected_suspended"
     | "sim_state_change"
-    | "kill_switch_changed";
+    | "kill_switch_changed"
+    | "translation_provider_error";
   severity: AlertSeverity;
   title: string;
   dedupeKey: string;
@@ -142,6 +143,27 @@ async function syncOneDevice(
   } else if (batteryLowResolved(battery)) {
     await resolveAlert(batteryKey);
   }
+}
+
+const PROVIDER_ALERT = "translation_provider_error";
+
+export async function noteTranslationResult(ok: boolean): Promise<void> {
+  if (ok) {
+    await resolveAlert(PROVIDER_ALERT);
+    return;
+  }
+  const since = new Date(Date.now() - 5 * 60 * 1000);
+  const rows = await getDb()
+    .select({ id: messageTranslations.id })
+    .from(messageTranslations)
+    .where(and(isNotNull(messageTranslations.error), gte(messageTranslations.createdAt, since)));
+  if (rows.length < 5) return;
+  await openAlert({
+    type: "translation_provider_error",
+    severity: "warning",
+    title: "Translation provider is failing",
+    dedupeKey: PROVIDER_ALERT,
+  });
 }
 
 export async function syncDeviceAlert(deviceId: string, now = new Date()): Promise<void> {

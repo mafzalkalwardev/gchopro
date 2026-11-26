@@ -11,6 +11,9 @@ type Payload = {
   error?: string;
   message?: string;
   data?: {
+    text?: string;
+    segments?: number;
+    encoding?: string;
     preview?: { segments?: number; encoding?: string };
     conversationId?: string;
     message?: { conversationId?: string };
@@ -121,8 +124,15 @@ export function Composer({
                 setError(result.message ?? "Preview failed.");
                 return;
               }
-              const view = result.data?.preview;
-              if (view) setPreview(`${view.encoding ?? ""} · ${view.segments ?? 0} segments`);
+              const view = result.data;
+              if (view?.segments !== undefined) {
+                const text = view.text ?? "";
+                setPreview(
+                  text.length > 0
+                    ? `${text}\n${view.encoding ?? ""} · ${view.segments} segments`
+                    : `${view.encoding ?? ""} · ${view.segments} segments`,
+                );
+              }
             });
           }}
         >
@@ -191,6 +201,63 @@ export function GroupForm() {
       </button>
       {error.length > 0 ? <p className="font-body text-signal">{error}</p> : null}
     </form>
+  );
+}
+
+export function TranslationToggle(props: {
+  original: string;
+  translated: string | null;
+  preferred: "original" | "translated";
+  unavailable: boolean;
+}) {
+  const [side, setSide] = useState(props.preferred);
+  const same = props.translated === null || props.translated === props.original;
+  const text =
+    !same && side === "translated" && props.translated !== null ? props.translated : props.original;
+  return (
+    <>
+      <p className="mt-2 whitespace-pre-wrap font-body">{text}</p>
+      {props.unavailable ? (
+        <p className="mt-2 font-body text-sm">Translation unavailable.</p>
+      ) : null}
+      {same ? null : (
+        <div className="mt-2 flex gap-3">
+          <button
+            className="font-mono text-xs underline"
+            type="button"
+            onClick={() => setSide("original")}
+          >
+            Original
+          </button>
+          <button
+            className="font-mono text-xs underline"
+            type="button"
+            onClick={() => setSide("translated")}
+          >
+            Translated
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+export function SendOriginal({ id }: { id: string }) {
+  return (
+    <button
+      className="mt-2 font-body text-sm underline"
+      type="button"
+      onClick={() => {
+        void fetch(`/api/portal/messages/${id}/original`, {
+          method: "POST",
+          headers: { "x-csrf-token": csrf() },
+        }).then((response) => {
+          if (response.ok) window.location.reload();
+        });
+      }}
+    >
+      Send without translation
+    </button>
   );
 }
 
