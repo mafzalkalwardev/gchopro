@@ -145,6 +145,7 @@ describe("paced messaging", () => {
       .update(messages)
       .set({ leaseExpiresAt: new Date(Date.now() + 60_000) })
       .where(eq(messages.id, sent.message.id));
+    await beatAt(new Date());
     const pending = await pendingWork(registered.id);
     expect(pending.messages.some((message) => message.id === sent.message.id)).toBe(true);
     await applyStatusReports(registered.id, [
