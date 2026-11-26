@@ -1157,19 +1157,6 @@ export async function dueWork(limit = 100): Promise<{ id: string; simId: string 
     .limit(limit);
 }
 
-/** The oldest waiting message on every SIM, so one backed-up line cannot hide the others. */
-export async function dueHeads(): Promise<{ id: string; simId: string }[]> {
-  const due = await dueWork(2000);
-  const seen = new Set<string>();
-  const heads: { id: string; simId: string }[] = [];
-  for (const item of due) {
-    if (seen.has(item.simId)) continue;
-    seen.add(item.simId);
-    heads.push(item);
-  }
-  return heads;
-}
-
 export async function holdUnhealthy(simId: string): Promise<void> {
   await getDb()
     .update(messages)

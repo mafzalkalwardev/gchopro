@@ -346,6 +346,21 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       "test numbers",
     );
 
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/heartbeat`, {
+        headers,
+        data: {
+          battery: 90,
+          charging: true,
+          network: "wifi",
+          appVersion: "2.0.0",
+          androidSdk: 34,
+          activeModemCount: 2,
+          uptimeSec: 25,
+        },
+      }),
+      "heartbeat before send",
+    );
     await compose(portalPage, peer, "你好");
     await portalPage.waitForURL("**/c/**");
     await expect(portalPage.getByText("你好")).toBeVisible();

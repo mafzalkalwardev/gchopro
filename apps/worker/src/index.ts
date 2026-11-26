@@ -10,7 +10,7 @@ import {
 import {
   claimTranslationJobs,
   deliverPendingAlerts,
-  dueHeads,
+  dueWork,
   getDb,
   getRedis,
   holdUnhealthy,
@@ -73,7 +73,7 @@ async function pump(): Promise<void> {
     if (!sim.assignable) await holdUnhealthy(sim.simId);
   }
   if (killed) return;
-  const due = await dueHeads();
+  const due = await dueWork();
   for (const item of due) {
     const sim = runtime.find((row) => row.simId === item.simId);
     if (sim?.assignable !== true) continue;

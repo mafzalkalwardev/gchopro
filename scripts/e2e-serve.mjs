@@ -103,6 +103,12 @@ function shutdown() {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
+execFileSync("pnpm", ["--filter", "@gchopro/db", "exec", "tsx", "src/e2e-quiet-queue.ts"], {
+  stdio: "inherit",
+  env: process.env,
+  shell: true,
+});
+
 startApp("@gchopro/admin", 3101);
 startApp("@gchopro/portal", 3100);
 startWorker();
