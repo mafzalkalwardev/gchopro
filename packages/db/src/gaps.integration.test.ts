@@ -2,6 +2,8 @@ import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { applySignature, countSegments, hashPassword } from "@gchopro/core";
 import { and, asc, eq, inArray } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { afterAll, describe, expect, it } from "vitest";
 import { uuidv7 } from "uuidv7";
 import { createUser, freeSims, tickSubscriptions } from "./account-service.js";
@@ -112,6 +114,13 @@ async function insertPolicy(name: string, patch: PolicyPatch = {}): Promise<stri
       overLimitAction: patch.overLimitAction ?? "hold",
     });
   return id;
+}
+
+function ownerDb() {
+  const url = process.env.DATABASE_OWNER_URL;
+  if (url === undefined || url.length === 0) throw new Error("owner url missing");
+  const client = postgres(url, { max: 1 });
+  return { db: drizzle(client), close: () => client.end() };
 }
 
 function requiredPortal(value: string | null): string {
@@ -587,6 +596,10 @@ describe("acceptance gaps", () => {
       .update(rateLimitPolicies)
       .set({ perHour: 100, perDay: 1 })
       .where(eq(rateLimitPolicies.id, desk.policyId));
+    await desk.db
+      .update(sims)
+      .set({ nextSendAt: new Date(0) })
+      .where(eq(sims.id, simId));
     await beat(desk.deviceId);
     expect((await processSend(second.message.id)).kind).toBe("dispatch");
     const third = await sendMessage(token, { to: "+923009950083", body: "day two" });
@@ -737,21 +750,30 @@ describe("acceptance gaps", () => {
     const audit = await desk.db.select().from(auditLogs).orderBy(asc(auditLogs.id));
     const last = audit[audit.length - 1];
     if (last === undefined) throw new Error("audit empty");
-    let broken = false;
+    let denied = false;
     try {
-      await desk.db.transaction(async (tx) => {
-        await tx
-          .update(auditLogs)
-          .set({ after: { tampered: true } })
-          .where(eq(auditLogs.id, last.id));
-        const result = await verifyAuditChain(tx);
-        broken = result.ok === false && result.brokenAtId === last.id.toString();
-        throw new Error("rollback");
-      });
+      await desk.db
+        .update(auditLogs)
+        .set({ after: { tampered: true } })
+        .where(eq(auditLogs.id, last.id));
     } catch (error) {
-      if (!(error instanceof Error) || error.message !== "rollback") throw error;
+      denied = error instanceof Error && String(error.cause).includes("permission denied");
     }
-    expect(broken).toBe(true);
+    expect(denied).toBe(true);
+    const owner = ownerDb();
+    try {
+      await owner.db
+        .update(auditLogs)
+        .set({ after: { tampered: true } })
+        .where(eq(auditLogs.id, last.id));
+      expect(await verifyAuditChain(desk.db)).toEqual({
+        ok: false,
+        brokenAtId: last.id.toString(),
+      });
+    } finally {
+      await owner.db.update(auditLogs).set({ after: last.after }).where(eq(auditLogs.id, last.id));
+      await owner.close();
+    }
     expect((await verifyAuditChain(desk.db)).ok).toBe(true);
   }, 60_000);
 
