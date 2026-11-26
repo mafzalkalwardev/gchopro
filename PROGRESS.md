@@ -9,7 +9,7 @@ Canonical spec: `GChoPro-PRD.md`.
 - [x] M2: Devices and multi-SIM — issue [#2](https://github.com/mafzalkalwardev/gchopro/issues/2)
 - [x] M3: Users and subscriptions — issue [#3](https://github.com/mafzalkalwardev/gchopro/issues/3)
 - [x] M4: Messaging core and paced queue — issue [#4](https://github.com/mafzalkalwardev/gchopro/issues/4)
-- [ ] M5: SIM health, alerts, compliance — issue [#5](https://github.com/mafzalkalwardev/gchopro/issues/5)
+- [x] M5: SIM health, alerts, compliance — issue [#5](https://github.com/mafzalkalwardev/gchopro/issues/5)
 - [ ] M6: Translation — issue [#6](https://github.com/mafzalkalwardev/gchopro/issues/6)
 - [ ] M7: Analytics and remaining features — issue [#7](https://github.com/mafzalkalwardev/gchopro/issues/7)
 - [ ] M8: Hardening, deployment, docs — issue [#8](https://github.com/mafzalkalwardev/gchopro/issues/8)
