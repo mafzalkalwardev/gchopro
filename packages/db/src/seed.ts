@@ -128,6 +128,7 @@ const settingRows: { key: string; value: unknown }[] = [
   },
   { key: "opt_in_keywords", value: ["START", "UNSTOP", "订阅"] },
   { key: "opt_out_scope", value: "global" },
+  { key: "test_numbers", value: [] },
   {
     key: "opt_out_confirmation",
     value: {
@@ -409,9 +410,16 @@ if (env.APP_ENV === "development") {
         deliveredAt: now,
       },
     ]);
+    const optOutId = uuidv7();
     await db.insert(optOuts).values({
-      id: uuidv7(),
+      id: optOutId,
       numberHash: phoneIndex(env.PHONE_INDEX_KEY, "+15005550006"),
+      numberEnc: encryptField(
+        activeKey,
+        env.FIELD_ENCRYPTION_ACTIVE_KEY_ID,
+        `opt_outs.number_enc.${optOutId}`,
+        "+15005550006",
+      ),
       scope: "global",
       source: "admin",
     });

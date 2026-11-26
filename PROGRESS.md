@@ -73,6 +73,12 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-26 — A retry never changes `sim_id`. A suspended SIM's messages stay on that queue.
 - 2026-11-26 — Portal `/` is the inbox and keeps `signed-in`, `user-id`, and the session watch. Admin `/` is the dashboard and keeps `signed-in`. Settings links to the password page and the CSV export. Theme and language catalogs stay in M7.
 - 2026-11-26 — The pacing purpose sentence is in the gate module and on the policies screen: "Pacing and limits keep each SIM within carrier fair-use policies and protect deliverability. They are not a mechanism to disguise traffic or evade carrier controls."
+- 2026-11-25 — A keyword matches after NFKC and lowercasing when it is the whole message or a prefix followed by whitespace or punctuation. Opt-in is checked first and reverses only `source=keyword` rows. STOPPING and a keyword buried in a sentence do not match.
+- 2026-11-25 — A new keyword opt-out cancels queued, held, and scheduled messages to that number, then queues one confirmation with `is_opt_out_confirmation`. That flag skips only the opt-out gate. An admin opt-out is reversed only by an admin, with sudo, a reason, and evidence.
+- 2026-11-25 — `suspected_suspended` does not set `paused_by_admin`. The queue pauses because the SIM is not assignable, and pending rows stay on that SIM as `held` / `sim_unhealthy`. A failed re-test leaves the state. A successful re-test returns the SIM to `active` and requeues those rows.
+- 2026-11-25 — The worker sweeps device alerts and delivers pending notifications every 30 seconds. CI does not start the worker. Tests inject the mail and Telegram transport. Alert text is the title and type only. A critical alert can be sent again after 60 minutes. A warning is sent once.
+- 2026-11-25 — Re-test numbers are `ADMIN_TEST_NUMBERS` plus `settings.test_numbers`. Email is sent only when `SMTP_HOST` and `SMTP_FROM` are set. Telegram uses `TELEGRAM_BOT_TOKEN`.
+- 2026-11-25 — The §19.4 policy sentence is in the admin and portal footers. Translation providers, analytics, and retention purge stay in later milestones.
 
 ## Deviations (approved)
 
@@ -80,4 +86,4 @@ None.
 
 ## Known issues
 
-- Docker is not installed on the machine that built M0 through M4. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M4 inbox, dashboard, and related screens were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the existing browser sign-in test.
+- Docker is not installed on the machine that built M0 through M5. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M5 opt-out, alert, and settings screens were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the existing browser sign-in test.

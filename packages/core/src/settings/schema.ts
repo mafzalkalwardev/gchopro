@@ -41,6 +41,7 @@ export const settingSchemas = {
     blocked_keywords: z.array(z.string().max(80)),
     block_urls: z.boolean(),
   }),
+  test_numbers: z.array(z.string().min(3).max(20)),
   health: z.object({
     consecutive_failure_threshold: z.number().int().positive(),
     suspension_signal_threshold: z.number().int().positive(),

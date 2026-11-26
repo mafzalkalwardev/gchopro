@@ -32,7 +32,11 @@ export default async function HomePage() {
           Sending starts when the subscription becomes active.
         </p>
       ) : null}
-      {!profile.line.available ? (
+      {profile.line.health === "suspected_suspended" ? (
+        <p className="mt-6 max-w-lg border border-signal px-4 py-3 font-body">
+          Line temporarily unavailable.
+        </p>
+      ) : !profile.line.available ? (
         <p className="mt-6 max-w-lg border border-signal px-4 py-3 font-body">
           The assigned line is not available.
         </p>
