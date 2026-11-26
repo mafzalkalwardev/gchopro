@@ -11,6 +11,8 @@ import { uuidv7 } from "uuidv7";
 import type { Db } from "./client.js";
 import { getDb } from "./client.js";
 import { noteSendOutcome } from "./device-service.js";
+import { requeueSameSim } from "./messaging.js";
+import { publishUser } from "./redis.js";
 import {
   indexPhone,
   normalizePhone,
@@ -94,7 +96,7 @@ async function partCounts(tx: Tx, messageId: string) {
   const delivered = new Set<number>();
   for (const row of rows) {
     if (row.event === "sent") sent.add(row.partIndex);
-    if (row.event === "failed") failed.add(row.partIndex);
+    if (row.event === "failed" || row.event === "delivery_failed") failed.add(row.partIndex);
     if (row.event === "delivered") delivered.add(row.partIndex);
   }
   return { sent: sent.size, failed: failed.size, delivered: delivered.size };
@@ -109,6 +111,15 @@ export async function applyStatusReports(deviceId: string, reports: StatusReport
     failureName: string | null;
     failureCode: number | null;
     isRetest: boolean;
+  }[] = [];
+  const live: {
+    userId: string;
+    messageId: string;
+    status: string;
+    simId: string;
+    attempts: number;
+    failureClass: string | null;
+    deliveryFailed: boolean;
   }[] = [];
   await db.transaction(async (tx) => {
     for (const report of reports) {
@@ -159,10 +170,35 @@ export async function applyStatusReports(deviceId: string, reports: StatusReport
           failureCode: report.resultCode ?? null,
           isRetest: message.isRetest,
         });
+        live.push({
+          userId: message.userId,
+          messageId: message.id,
+          status,
+          simId: message.simId,
+          attempts: message.attempts,
+          failureClass,
+          deliveryFailed: report.event === "delivery_failed",
+        });
       }
     }
   });
   for (const outcome of outcomes) await noteSendOutcome(outcome);
+  for (const item of live) {
+    await publishUser(item.userId, {
+      type: "message.status",
+      messageId: item.messageId,
+      status: item.status,
+    });
+    if (item.status === "failed") {
+      await requeueSameSim(
+        item.messageId,
+        item.simId,
+        item.attempts,
+        item.failureClass ?? "unknown",
+        item.deliveryFailed,
+      );
+    }
+  }
   return { ok: true, status };
 }
 
@@ -183,6 +219,7 @@ export async function ingestInbox(
   let inserted = 0;
   let duplicates = 0;
   let unroutable = 0;
+  const received: { userId: string; messageId: string }[] = [];
   await db.transaction(async (tx) => {
     for (const row of rows) {
       const existing = await tx
@@ -303,7 +340,11 @@ export async function ingestInbox(
         }
       }
       inserted += 1;
+      received.push({ userId: owner.id, messageId });
     }
   });
+  for (const item of received) {
+    await publishUser(item.userId, { type: "message.received", messageId: item.messageId });
+  }
   return { inserted, duplicates, unroutable };
 }

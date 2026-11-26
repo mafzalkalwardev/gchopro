@@ -112,11 +112,13 @@ export const holdReason = pgEnum("hold_reason", [
   "subscription",
   "device_offline",
   "translation_pending",
+  "rate_segments",
 ]);
 export const blockReason = pgEnum("block_reason", [
   "opted_out",
   "content_rule",
   "subscription_inactive",
+  "limit_reached",
   "user_disabled",
   "no_sim",
   "invalid_number",

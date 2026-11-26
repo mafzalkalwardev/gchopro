@@ -18,6 +18,13 @@ export const SAFE_TEXT = {
   upgrade_required: "This app version is no longer accepted.",
   device_revoked: "This device is no longer paired.",
   conflict: "That record is already in use.",
+  too_long: "This message is longer than 10 segments.",
+  opted_out: "This number has opted out.",
+  outside_window: "Sending is closed for this line right now.",
+  limit_reached: "This line has reached its send limit.",
+  line_unavailable: "The assigned line is not available.",
+  kill_switch: "Sending is paused.",
+  missing_variables: "This template is missing values.",
 } as const;
 
 export class AppError extends Error {

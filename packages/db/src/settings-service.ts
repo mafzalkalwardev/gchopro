@@ -10,6 +10,7 @@ import {
 } from "@gchopro/core";
 import { eq } from "drizzle-orm";
 import { appendAudit } from "./audit.js";
+import { writeKillAlert } from "./messaging.js";
 import { getDb } from "./client.js";
 import { assertSudo, requireReady } from "./login.js";
 import { settings } from "./schema.js";
@@ -78,12 +79,14 @@ export async function setKillSwitch(input: {
     reason: input.reason,
     since: input.enabled ? new Date().toISOString() : null,
   };
-  return updateSetting({
+  const saved = await updateSetting({
     token: input.token,
     key: "kill_switch" satisfies SettingKey,
     value,
     ip: input.ip,
   });
+  await writeKillAlert(input.enabled, input.reason);
+  return saved;
 }
 
 export async function readAuditVerification(

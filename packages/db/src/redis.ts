@@ -12,6 +12,10 @@ export function getRedis(): Redis {
   return cached;
 }
 
+export async function publishUser(userId: string, payload: unknown): Promise<void> {
+  await getRedis().publish(`user:${userId}`, JSON.stringify(payload));
+}
+
 export async function closeRedis(): Promise<void> {
   if (!cached) return;
   await cached.quit();

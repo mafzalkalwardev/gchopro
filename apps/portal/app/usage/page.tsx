@@ -42,6 +42,34 @@ export default async function UsagePage() {
           <dt className="font-mono text-xs uppercase">Days left</dt>
           <dd>{subscription?.daysLeft ?? 0}</dd>
         </div>
+        <div>
+          <dt className="font-mono text-xs uppercase">This minute</dt>
+          <dd>
+            {profile.usage.minute}
+            {profile.limits ? ` / ${profile.limits.perMinute}` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-mono text-xs uppercase">This hour</dt>
+          <dd>
+            {profile.usage.hour}
+            {profile.limits ? ` / ${profile.limits.perHour}` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-mono text-xs uppercase">Today</dt>
+          <dd>
+            {profile.usage.day}
+            {profile.limits ? ` / ${profile.limits.perDay}` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-mono text-xs uppercase">Segments today</dt>
+          <dd>
+            {profile.usage.segmentsDay}
+            {profile.limits ? ` / ${profile.limits.segmentsPerDay}` : ""}
+          </dd>
+        </div>
       </dl>
     </main>
   );

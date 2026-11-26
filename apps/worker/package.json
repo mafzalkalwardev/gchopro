@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@gchopro/core": "workspace:*",
-    "@gchopro/db": "workspace:*"
+    "@gchopro/db": "workspace:*",
+    "bullmq": "^6.7.10"
   },
   "devDependencies": {
     "@gchopro/config": "workspace:*",

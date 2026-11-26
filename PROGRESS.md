@@ -63,6 +63,16 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-26 — Unassigning a SIM cancels that user's queued, scheduled, and held messages on the old SIM. Disabling a user or blocking a subscription moves queued and held messages to `blocked`. A read-only expiry blocks those messages and keeps the session.
 - 2026-11-26 — The API returns a password only when it generated one. The three-day reminder is an in-portal notice. The daily expiring alert is stored and not emailed. Both email and the support view stay in later milestones.
 - 2026-11-26 — `sendingBlocked` is the gate for read-only and scheduled access. The send route is M4 and has to call it. Payment CSV cells escape formula characters.
+- 2026-11-26 — M4 publishes `message.status` and `message.received` on `user:{id}` with a `type` field. A payload without `type` stays `session.revoked`, so the existing revoke listener is unchanged.
+- 2026-11-26 — Gate order, gap, window, and retries are pure functions in core. Fake timers cover them. The worker calls the same dispatch function. CI does not start the worker process.
+- 2026-11-26 — The worker keeps the 60-second subscription tick. A 2-second pump promotes scheduled messages, sweeps leases, and feeds one BullMQ queue per SIM (`send:sim:{id}`, concurrency 1). The kill switch is polled every 500 ms. Translate, notify, health, stats, retention, and backup jobs stay in later milestones.
+- 2026-11-26 — BullMQ uses its own Redis connection with `maxRetriesPerRequest: null`. The shared client stays at 2.
+- 2026-11-26 — Outbound translation holds a message only when a provider other than `none` is configured. The default provider is `none`, so a user with translation turned on still sends. Provider calls are M6.
+- 2026-11-26 — One message is in flight per SIM because dispatch checks for an unexpired lease. The job does not block until the handset reports.
+- 2026-11-26 — Cap counters live in Redis and increment only at dispatch. Portal usage gauges read those keys. A segment cap holds as `rate_segments`. A rejected cap blocks as `limit_reached`.
+- 2026-11-26 — A retry never changes `sim_id`. A suspended SIM's messages stay on that queue.
+- 2026-11-26 — Portal `/` is the inbox and keeps `signed-in`, `user-id`, and the session watch. Admin `/` is the dashboard and keeps `signed-in`. Settings links to the password page and the CSV export. Theme and language catalogs stay in M7.
+- 2026-11-26 — The pacing purpose sentence is in the gate module and on the policies screen: "Pacing and limits keep each SIM within carrier fair-use policies and protect deliverability. They are not a mechanism to disguise traffic or evade carrier controls."
 
 ## Deviations (approved)
 
@@ -70,4 +80,4 @@ None.
 
 ## Known issues
 
-- Docker is not installed on the machine that built M0 and M1. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. GitHub Actions on Ubuntu started Compose, completed migrate and seed, and passed the browser sign-in test.
+- Docker is not installed on the machine that built M0 through M4. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. The M4 inbox, dashboard, and related screens were not clicked in a local browser. GitHub Actions on Ubuntu starts Compose, migrates, seeds, and runs the integration tests plus the existing browser sign-in test.

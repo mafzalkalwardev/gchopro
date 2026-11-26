@@ -1,6 +1,7 @@
 export { deviceTokenHash, encryptField, phoneIndex } from "./field-crypto.js";
 export { closeDb, getDb } from "./client.js";
-export { closeRedis, getRedis, openUserEvents } from "./redis.js";
+export { killSwitchOn } from "./device-shared.js";
+export { closeRedis, getRedis, openUserEvents, publishUser } from "./redis.js";
 export {
   acceptAup,
   assertSudo,
@@ -77,4 +78,47 @@ export {
   tickSubscriptions,
   voidPayment,
 } from "./account-service.js";
+export {
+  cancelGroup,
+  cancelMessage,
+  dueWork,
+  exportMessages,
+  groupProgress,
+  listConversations,
+  listScheduled,
+  listThread,
+  markRead,
+  patchConversation,
+  previewMessage,
+  processSend,
+  promoteScheduled,
+  sendGroup,
+  sendMessage,
+  simRuntime,
+  sweepLeases,
+  holdUnhealthy,
+  usageCounts,
+} from "./messaging.js";
+export {
+  createContact,
+  deleteContact,
+  deleteContactGroup,
+  importContacts,
+  listContactGroups,
+  listContacts,
+  patchContact,
+  saveContactGroup,
+} from "./contacts.js";
+export {
+  dashboard,
+  deletePolicy,
+  deletePortalTemplate,
+  deleteSharedTemplate,
+  listPolicyRows,
+  listPortalTemplates,
+  listSharedTemplates,
+  savePolicy,
+  savePortalTemplate,
+  saveSharedTemplate,
+} from "./catalog.js";
 export * from "./schema.js";
