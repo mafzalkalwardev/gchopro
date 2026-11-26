@@ -1,5 +1,11 @@
 import { randomBytes } from "node:crypto";
-import { assertSeedAllowed, hashPassword, loadEnv, parseSeedIdentity } from "@gchopro/core";
+import {
+  assertSeedAllowed,
+  hashPassword,
+  loadEnv,
+  parseSeedIdentity,
+  verifyPassword,
+} from "@gchopro/core";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -184,7 +190,6 @@ const admin = (
 if (admin === undefined) throw new Error("Admin user was not seeded");
 
 const opsPassword = process.env.SEED_OPS_PASSWORD;
-console.log(`ops seed ${opsPassword === undefined ? "missing" : String(opsPassword.length)}`);
 if (opsPassword !== undefined && opsPassword.length >= 16) {
   await db
     .insert(users)
@@ -200,6 +205,10 @@ if (opsPassword !== undefined && opsPassword.length >= 16) {
       timezone: "Asia/Karachi",
     })
     .onConflictDoNothing();
+  const ops = (await db.select().from(users).where(eq(users.username, "ops")))[0];
+  if (ops === undefined || !(await verifyPassword(ops.passwordHash, opsPassword))) {
+    throw new Error("Operations admin was not seeded");
+  }
 }
 
 await db

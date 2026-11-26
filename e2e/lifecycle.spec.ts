@@ -29,6 +29,21 @@ async function csrf(context: BrowserContext, origin: string): Promise<Record<str
   return { origin, "x-csrf-token": token?.value ?? "" };
 }
 
+async function accepted(
+  response: Awaited<ReturnType<APIRequestContext["post"]>>,
+  label: string,
+): Promise<void> {
+  if (response.ok()) return;
+  let code = "unreadable";
+  try {
+    const body = (await response.json()) as { error?: string };
+    if (typeof body.error === "string") code = body.error;
+  } catch {
+    code = "unreadable";
+  }
+  throw new Error(`${label} ${response.status()} ${code}`);
+}
+
 async function adminSend(
   page: Page,
   context: BrowserContext,
@@ -80,7 +95,7 @@ async function pollPending(
     const response = await request.get(`${gatewayBase}/api/devices/${deviceId}/pending`, {
       headers: { authorization: `Bearer ${token}`, "x-gateway-protocol": "2" },
     });
-    expect(response.ok()).toBeTruthy();
+    await accepted(response, "pending");
     const body = (await response.json()) as { messages: { id: string; body: string }[] };
     const found = body.messages.find(match);
     if (found !== undefined) return found.id;
@@ -149,17 +164,20 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     await expect(adminPage.locator("form")).toHaveAttribute("data-hydrated", "true");
     await adminPage.getByLabel("Username").fill("ops");
     await adminPage.getByLabel("Password").fill(opsPassword);
-    console.log(`ops password length ${opsPassword.length}`);
-    await adminPage.getByRole("button", { name: "Sign in" }).click();
-    const rejected = adminPage.locator("p.text-signal");
-    const landed = await Promise.race([
-      adminPage.waitForURL("**/totp").then(() => "totp" as const),
-      rejected.waitFor().then(() => "rejected" as const),
-    ]);
-    if (landed === "rejected") throw new Error(await rejected.innerText());
+    const loginResponse = adminPage.waitForResponse(
+      (response) =>
+        response.url().includes("/api/admin/auth/login") && response.request().method() === "POST",
+    );
+    await adminPage.getByRole("button", { name: "Sign in" }).click({ noWaitAfter: true });
+    const signedIn = await loginResponse;
+    await accepted(signedIn, "ops login");
+    await adminPage.waitForURL("**/totp");
     const secret = (await adminPage.getByTestId("totp-secret").innerText()).trim();
     await adminPage.getByLabel("Authenticator code").fill(code(secret));
     await adminPage.getByRole("button", { name: "Verify" }).click();
+    const recovery = (
+      await adminPage.getByTestId("recovery-codes").locator("li").first().innerText()
+    ).trim();
     await adminPage.getByRole("button", { name: "Continue" }).click();
     await adminPage.getByLabel("Current password").fill(opsPassword);
     await adminPage.getByLabel("New password").fill(opsNext);
@@ -175,7 +193,7 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
         name: "Lifecycle phone",
       },
     );
-    expect(pairing.ok()).toBeTruthy();
+    await accepted(pairing, "pairing");
     const paired = (await pairing.json()) as { data: { code: string } };
     const registered = await request.post(`${gatewayBase}/api/devices/register`, {
       data: {
@@ -187,7 +205,7 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
         androidSdk: 34,
       },
     });
-    expect(registered.ok()).toBeTruthy();
+    await accepted(registered, "register");
     const device = (await registered.json()) as { id: string; token: string };
     const headers = { authorization: `Bearer ${device.token}`, "x-gateway-protocol": "2" };
     const reported = await request.post(`${gatewayBase}/api/devices/${device.id}/sims`, {
@@ -215,26 +233,25 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
         ],
       },
     });
-    expect(reported.ok()).toBeTruthy();
+    await accepted(reported, "sims");
     const sims = (await reported.json()) as { sims: { simId: string; subscriptionId: number }[] };
     const simId = sims.sims.find((sim) => sim.subscriptionId === 801)?.simId;
     if (simId === undefined) throw new Error("sim was not reported");
-    expect(
-      (
-        await request.post(`${gatewayBase}/api/devices/${device.id}/heartbeat`, {
-          headers,
-          data: {
-            battery: 90,
-            charging: true,
-            network: "wifi",
-            appVersion: "2.0.0",
-            androidSdk: 34,
-            activeModemCount: 2,
-            uptimeSec: 20,
-          },
-        })
-      ).ok(),
-    ).toBeTruthy();
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/heartbeat`, {
+        headers,
+        data: {
+          battery: 90,
+          charging: true,
+          network: "wifi",
+          appVersion: "2.0.0",
+          androidSdk: 34,
+          activeModemCount: 2,
+          uptimeSec: 20,
+        },
+      }),
+      "heartbeat",
+    );
 
     const policy = await adminSend(adminPage, adminContext, "post", "/api/admin/policies", {
       name: `All day ${stamp}`,
@@ -251,7 +268,7 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       windowTimezoneMode: "user",
       overLimitAction: "hold",
     });
-    expect(policy.ok()).toBeTruthy();
+    await accepted(policy, "policy");
     const policyId = ((await policy.json()) as { data: { id: string } }).data.id;
     const created = await adminSend(adminPage, adminContext, "post", "/api/admin/users", {
       username,
@@ -267,7 +284,7 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       allowSelfPasswordChange: true,
       subscription: { planUnit: "month", planQuantity: 1, expiryBehavior: "block" },
     });
-    expect(created.ok()).toBeTruthy();
+    await accepted(created, "user");
     const user = ((await created.json()) as { data: { user: { subscription: { id: string } } } })
       .data.user;
 
@@ -275,7 +292,13 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     await expect(portalPage.locator("form")).toHaveAttribute("data-hydrated", "true");
     await portalPage.getByLabel("Username").fill(username);
     await portalPage.getByLabel("Password").fill(userPassword);
-    await portalPage.getByRole("button", { name: "Sign in" }).click();
+    const portalLogin = portalPage.waitForResponse(
+      (response) =>
+        response.url().includes("/api/portal/auth/login") && response.request().method() === "POST",
+    );
+    await portalPage.getByRole("button", { name: "Sign in" }).click({ noWaitAfter: true });
+    await accepted(await portalLogin, "portal login");
+    await portalPage.waitForURL("**/password");
     await portalPage.getByLabel("Current password").fill(userPassword);
     await portalPage.getByLabel("New password").fill(userNext);
     await portalPage.getByRole("button", { name: "Change password" }).click();
@@ -284,29 +307,27 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
 
     const granted = await adminSend(adminPage, adminContext, "post", "/api/admin/auth/sudo", {
       password: opsNext,
-      code: code(secret),
+      recoveryCode: recovery,
     });
-    expect(granted.ok()).toBeTruthy();
-    expect(
-      (
-        await adminSend(adminPage, adminContext, "patch", "/api/admin/settings/translation", {
-          value: {
-            provider: "libretranslate",
-            deepl: { plan: "free" },
-            google: {},
-            libretranslate: { url: mock.url },
-            preview_before_send: true,
-          },
-        })
-      ).ok(),
-    ).toBeTruthy();
-    expect(
-      (
-        await adminSend(adminPage, adminContext, "patch", "/api/admin/settings/test_numbers", {
-          value: ["+923001234567"],
-        })
-      ).ok(),
-    ).toBeTruthy();
+    await accepted(granted, "sudo");
+    await accepted(
+      await adminSend(adminPage, adminContext, "patch", "/api/admin/settings/translation", {
+        value: {
+          provider: "libretranslate",
+          deepl: { plan: "free" },
+          google: {},
+          libretranslate: { url: mock.url },
+          preview_before_send: true,
+        },
+      }),
+      "translation",
+    );
+    await accepted(
+      await adminSend(adminPage, adminContext, "patch", "/api/admin/settings/test_numbers", {
+        value: ["+923001234567"],
+      }),
+      "test numbers",
+    );
 
     await compose(portalPage, peer, "你好");
     await portalPage.waitForURL("**/c/**");
@@ -317,40 +338,38 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       device.token,
       (message) => message.body === "Hello there",
     );
-    expect(
-      (
-        await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
-          headers,
-          data: {
-            id: outbound,
-            event: "delivered",
-            partIndex: 0,
-            partCount: 1,
-            subscriptionId: 801,
-            at: new Date().toISOString(),
-          },
-        })
-      ).ok(),
-    ).toBeTruthy();
-    expect(
-      (
-        await request.post(`${gatewayBase}/api/devices/${device.id}/inbox`, {
-          headers,
-          data: {
-            messages: [
-              {
-                providerId: `in-${stamp}`,
-                subscriptionId: 801,
-                address: peer,
-                body: "Reply",
-                direction: "in",
-                receivedAt: new Date().toISOString(),
-              },
-            ],
-          },
-        })
-      ).ok(),
-    ).toBeTruthy();
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
+        headers,
+        data: {
+          id: outbound,
+          event: "delivered",
+          partIndex: 0,
+          partCount: 1,
+          subscriptionId: 801,
+          at: new Date().toISOString(),
+        },
+      }),
+      "delivered",
+    );
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/inbox`, {
+        headers,
+        data: {
+          messages: [
+            {
+              providerId: `in-${stamp}`,
+              subscriptionId: 801,
+              address: peer,
+              body: "Reply",
+              direction: "in",
+              receivedAt: new Date().toISOString(),
+            },
+          ],
+        },
+      }),
+      "reply",
+    );
     await expect
       .poll(async () => {
         await portalPage.reload();
@@ -358,25 +377,24 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       })
       .toBeGreaterThan(0);
 
-    expect(
-      (
-        await request.post(`${gatewayBase}/api/devices/${device.id}/inbox`, {
-          headers,
-          data: {
-            messages: [
-              {
-                providerId: `stop-${stamp}`,
-                subscriptionId: 801,
-                address: peer,
-                body: "STOP",
-                direction: "in",
-                receivedAt: new Date().toISOString(),
-              },
-            ],
-          },
-        })
-      ).ok(),
-    ).toBeTruthy();
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/inbox`, {
+        headers,
+        data: {
+          messages: [
+            {
+              providerId: `stop-${stamp}`,
+              subscriptionId: 801,
+              address: peer,
+              body: "STOP",
+              direction: "in",
+              receivedAt: new Date().toISOString(),
+            },
+          ],
+        },
+      }),
+      "stop",
+    );
     await portalPage.reload();
     await expect(portalPage.getByText("Compose is turned off.")).toBeVisible();
     await compose(portalPage, peer, "after stop");
@@ -391,22 +409,21 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
         device.token,
         (message) => message.body === `limit ${mark}`,
       );
-      expect(
-        (
-          await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
-            headers,
-            data: {
-              id,
-              event: "failed",
-              partIndex: 0,
-              partCount: 1,
-              subscriptionId: 801,
-              resultName: "RESULT_ERROR_LIMIT_EXCEEDED",
-              at: new Date().toISOString(),
-            },
-          })
-        ).ok(),
-      ).toBeTruthy();
+      await accepted(
+        await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
+          headers,
+          data: {
+            id,
+            event: "failed",
+            partIndex: 0,
+            partCount: 1,
+            subscriptionId: 801,
+            resultName: "RESULT_ERROR_LIMIT_EXCEEDED",
+            at: new Date().toISOString(),
+          },
+        }),
+        "limit",
+      );
     }
     await compose(portalPage, after, "held");
     await expect(portalPage.getByText("The assigned line is not available.")).toBeVisible();
@@ -420,41 +437,39 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
         testNumber: "+923001234567",
       },
     );
-    expect(retest.ok()).toBeTruthy();
+    await accepted(retest, "retest");
     const retestId = ((await retest.json()) as { data: { messageId: string } }).data.messageId;
     await pollPending(request, device.id, device.token, (message) => message.id === retestId);
-    expect(
-      (
-        await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
-          headers,
-          data: {
-            id: retestId,
-            event: "sent",
-            partIndex: 0,
-            partCount: 1,
-            subscriptionId: 801,
-            at: new Date().toISOString(),
-          },
-        })
-      ).ok(),
-    ).toBeTruthy();
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/report`, {
+        headers,
+        data: {
+          id: retestId,
+          event: "sent",
+          partIndex: 0,
+          partCount: 1,
+          subscriptionId: 801,
+          at: new Date().toISOString(),
+        },
+      }),
+      "retest report",
+    );
     await compose(portalPage, after, "after retest");
     await portalPage.waitForURL("**/c/**");
     await expect(portalPage.getByText("after retest")).toBeVisible();
 
-    expect(
-      (
-        await adminSend(
-          adminPage,
-          adminContext,
-          "post",
-          `/api/admin/subscriptions/${user.subscription.id}/disable`,
-          {
-            reason: "e2e expiry",
-          },
-        )
-      ).ok(),
-    ).toBeTruthy();
+    await accepted(
+      await adminSend(
+        adminPage,
+        adminContext,
+        "post",
+        `/api/admin/subscriptions/${user.subscription.id}/disable`,
+        {
+          reason: "e2e expiry",
+        },
+      ),
+      "disable",
+    );
     await portalContext.clearCookies();
     await portalPage.goto(`${portalBase}/login`);
     await expect(portalPage.locator("form")).toHaveAttribute("data-hydrated", "true");
