@@ -89,7 +89,6 @@ function startWorker() {
     }),
   );
   child.on("exit", (code) => {
-    console.error(`worker exit ${code ?? "null"}`);
     if (!stopping && code !== 0 && code !== null) process.exit(code);
   });
 }

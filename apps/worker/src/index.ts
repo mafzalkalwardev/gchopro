@@ -40,7 +40,6 @@ type Lane = { queue: Queue; worker: Worker };
 const lanes = new Map<string, Lane>();
 
 logger.info(redactForLog({ phase: "m8" }), "worker started");
-process.stderr.write("worker started\n");
 
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
@@ -170,19 +169,17 @@ const translateQueue = new Queue("translate", { connection });
 const translateWorker = new Worker(
   "translate",
   async (job: Job<{ messageId: string; role: "outbound_original" | "inbound_display" }>) => {
-    const result = await translateQueued(job.data.messageId, job.data.role);
-    process.stderr.write(`translate ${job.data.role} ${result}\n`);
+    await translateQueued(job.data.messageId, job.data.role);
   },
   { connection, concurrency: 4 },
 );
 
 async function watchTranslations(): Promise<void> {
   const jobs = await claimTranslationJobs(20);
-  if (jobs.length > 0) process.stderr.write(`translate claimed ${String(jobs.length)}\n`);
   for (const job of jobs) {
     try {
       await translateQueue.add("translate", job, {
-        jobId: `${job.role}:${job.messageId}`,
+        jobId: `${job.role}-${job.messageId}`,
         removeOnComplete: true,
         removeOnFail: true,
         attempts: 1,
