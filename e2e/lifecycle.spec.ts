@@ -395,6 +395,21 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       .toBeGreaterThan(0);
 
     await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/heartbeat`, {
+        headers,
+        data: {
+          battery: 90,
+          charging: true,
+          network: "wifi",
+          appVersion: "2.0.0",
+          androidSdk: 34,
+          activeModemCount: 2,
+          uptimeSec: 30,
+        },
+      }),
+      "heartbeat before stop",
+    );
+    await accepted(
       await request.post(`${gatewayBase}/api/devices/${device.id}/inbox`, {
         headers,
         data: {

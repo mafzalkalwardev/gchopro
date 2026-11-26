@@ -44,7 +44,8 @@ logger.info(redactForLog({ phase: "m8" }), "worker started");
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
   if (result.kind === "hold" || result.kind === "wait") {
-    await job.moveToDelayed(Date.now() + result.delayMs);
+    if (job.token === undefined) throw new Error("send job has no lock token");
+    await job.moveToDelayed(Date.now() + result.delayMs, job.token);
     throw new DelayedError();
   }
 }
@@ -72,8 +73,12 @@ async function pump(): Promise<void> {
     if (!sim.assignable) await holdUnhealthy(sim.simId);
   }
   if (killed) return;
-  const due = await dueWork();
+  // Oldest first on each SIM. A backed-up line does not take every slot.
+  const due = await dueWork(1000);
+  const started = new Set<string>();
   for (const item of due) {
+    if (started.has(item.simId)) continue;
+    started.add(item.simId);
     const sim = runtime.find((row) => row.simId === item.simId);
     if (sim?.assignable !== true) continue;
     const lane = lanes.get(item.simId);
