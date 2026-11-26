@@ -4,7 +4,7 @@ Canonical spec: `GChoPro-PRD.md`.
 
 ## Milestones
 
-- [ ] M0: Foundation — scaffold, Compose files, env validation, full Drizzle schema and first migration, seed, pino, CI. Local migrate/seed is unverified until Docker is installed. CI is the migrate/seed check.
+- [x] M0: Foundation — scaffold, Compose files, env validation, full Drizzle schema and first migration, seed, pino, CI. Local migrate/seed is unverified until Docker is installed. CI on `m0-foundation` ran lint, typecheck, build, unit tests, audit, gitleaks, migrate, and seed (2026-11-26).
 - [ ] M1: Security and auth baseline — issue [#1](https://github.com/mafzalkalwardev/gchopro/issues/1)
 - [ ] M2: Devices and multi-SIM — issue [#2](https://github.com/mafzalkalwardev/gchopro/issues/2)
 - [ ] M3: Users and subscriptions — issue [#3](https://github.com/mafzalkalwardev/gchopro/issues/3)
@@ -50,4 +50,4 @@ None.
 
 ## Known issues
 
-- Docker is not installed on the machine that built M0. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. CI starts Compose and runs migrate and seed.
+- Docker is not installed on the machine that built M0. `pnpm dev`, `pnpm db:migrate`, and `pnpm db:seed` were not run against a local Compose stack. GitHub Actions on Ubuntu started Compose and completed migrate and seed.
