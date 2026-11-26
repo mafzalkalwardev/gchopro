@@ -2,6 +2,7 @@ import { decryptField, loadEnv } from "@gchopro/core";
 import { eq } from "drizzle-orm";
 import { getDb } from "./client.js";
 import { requireReady } from "./login.js";
+import { usageCounts } from "./messaging.js";
 import { rateLimitPolicies, sims, subscriptions, users } from "./schema.js";
 
 export async function portalProfile(token: string | undefined) {
@@ -81,6 +82,6 @@ export async function portalProfile(token: string | undefined) {
             segmentsPerDay: policy.segmentsPerDay,
             maxGroupRecipients: policy.maxGroupRecipients,
           },
-    usage: { minute: 0, hour: 0, day: 0, segmentsDay: 0 },
+    usage: await usageCounts(user.id),
   };
 }

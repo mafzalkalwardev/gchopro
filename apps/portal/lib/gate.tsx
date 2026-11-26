@@ -16,9 +16,15 @@ export async function requirePortal(): Promise<SessionRecord> {
 
 export function PortalNav({ unread }: { unread: number }) {
   return (
-    <nav className="mt-6 flex gap-5 font-body text-sm">
-      <a href="/">Bench</a>
+    <nav className="mt-6 flex flex-wrap gap-4 font-body text-sm">
+      <a href="/">Inbox</a>
+      <a href="/new">New</a>
+      <a href="/contacts">Contacts</a>
+      <a href="/groups">Groups</a>
+      <a href="/templates">Templates</a>
+      <a href="/scheduled">Scheduled</a>
       <a href="/usage">Usage</a>
+      <a href="/settings">Settings</a>
       <a href="/notices">
         Notices
         {unread > 0 ? (

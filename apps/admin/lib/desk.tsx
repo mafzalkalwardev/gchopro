@@ -18,7 +18,7 @@ export function BenchNav({ username }: { username: string }) {
     <header className="border-b border-ink/15 px-6 py-4">
       <p className="font-mono text-sm text-signal">GChoPro</p>
       <div className="mt-3 flex items-end justify-between gap-6">
-        <nav className="flex gap-5 font-body text-sm">
+        <nav className="flex flex-wrap gap-4 font-body text-sm">
           <a href="/">Bench</a>
           <a href="/devices">Devices</a>
           <a href="/sims">SIMs</a>
@@ -27,6 +27,8 @@ export function BenchNav({ username }: { username: string }) {
           <a href="/subscriptions">Subscriptions</a>
           <a href="/payments">Payments</a>
           <a href="/notices">Notices</a>
+          <a href="/policies">Policies</a>
+          <a href="/templates">Templates</a>
         </nav>
         <p className="font-mono text-sm">{username}</p>
       </div>
