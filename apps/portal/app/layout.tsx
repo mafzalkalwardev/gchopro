@@ -19,6 +19,9 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+// The CSP nonce is per request, so the document cannot be cached from the build.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
