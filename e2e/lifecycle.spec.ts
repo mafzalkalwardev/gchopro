@@ -184,7 +184,7 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
     await adminPage.getByLabel("Current password").fill(opsPassword);
     await adminPage.getByLabel("New password").fill(opsNext);
     await adminPage.getByRole("button", { name: "Change password" }).click();
-    await expect(adminPage.getByTestId("signed-in")).toHaveText("admin");
+    await expect(adminPage.getByTestId("signed-in")).toHaveText("ops");
 
     const pairing = await adminSend(
       adminPage,
