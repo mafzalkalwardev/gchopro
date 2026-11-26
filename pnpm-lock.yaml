@@ -136,6 +136,9 @@ importers:
       '@gchopro/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@gchopro/db':
+        specifier: workspace:*
+        version: link:../../packages/db
     devDependencies:
       '@gchopro/config':
         specifier: workspace:*
@@ -179,6 +182,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@date-fns/tz':
+        specifier: ^1.5.0
+        version: 1.5.0
       '@node-rs/argon2':
         specifier: ^2.0.2
         version: 2.2.2
@@ -191,6 +197,9 @@ importers:
       '@oslojs/otp':
         specifier: ^1.1.0
         version: 1.1.0
+      date-fns:
+        specifier: ^4.4.0
+        version: 4.4.0
       libphonenumber-js:
         specifier: ^1.12.24
         version: 1.13.17
@@ -347,6 +356,9 @@ packages:
   '@babel/types@7.29.15':
     resolution: {integrity: sha512-/XKpKDakL//LZ66bq1XsZOswuqeI5MZqPLDu18o3XdkU1fNJ7bdPtzgnc4ZNS+bBGHV0FJG8jjb8SwcC3nNVQQ==}
     engines: {node: '>=6.9.0'}
+
+  '@date-fns/tz@1.5.0':
+    resolution: {integrity: sha512-lwYN/vDPeNRULcepoE/LO2Pgx+7/RV+S9ARfbc9lr2DtGkOD7pAiruHvbR1RX3Qyf6ja47EWJDMsNK5vK08DJg==}
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
@@ -1695,6 +1707,9 @@ packages:
   csstype@3.2.4:
     resolution: {integrity: sha512-PoKaoPzQapnEoqUSnHx1u6W6ku8CVEgKsnpmmzU3m1nwkidpPBQ8V/Zq2+bWNrsOKoKLwTGdbx6xF7BXP1zLVQ==}
 
+  date-fns@4.4.0:
+    resolution: {integrity: sha512-+1UMbeh68lH1SegH83CGWwpb6OHHbpSgr3+s5Eww5M4CAgswBpoWS0AjTOfEJ33HiYKz1hdj/KTFprzXHmq/6w==}
+
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
     engines: {node: '>=6.0'}
@@ -2916,6 +2931,8 @@ snapshots:
       '@babel/helper-string-parser': 7.29.15
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@date-fns/tz@1.5.0': {}
+
   '@drizzle-team/brocli@0.10.2': {}
 
   '@emnapi/core@2.0.0-beta.2':
@@ -3911,6 +3928,8 @@ snapshots:
       which: 2.0.2
 
   csstype@3.2.4: {}
+
+  date-fns@4.4.0: {}
 
   debug@4.4.3:
     dependencies:

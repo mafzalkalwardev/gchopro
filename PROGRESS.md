@@ -57,6 +57,12 @@ Product checklists stay open. M0 only covers the repo-hygiene line inside Securi
 - 2026-11-26 — `message.received` is not published on the portal session channel. That channel currently treats every payload as a revoked session.
 - 2026-11-26 — SIM health marks use ink and signal. The screen spec's extra hues stay out of the theme.
 - 2026-11-26 — The gateway application id is `com.gchopro.gateway`. A real dual-SIM phone still has to be checked by hand. CI runs `assembleDebug` and the JVM unit tests.
+- 2026-11-26 — Subscription periods use `date-fns` v4 and `@date-fns/tz`. `date-fns-tz` targets date-fns v3.
+- 2026-11-26 — `subscriptions:tick` runs every 60 seconds inside the worker process. BullMQ repeatable jobs stay in M4.
+- 2026-11-26 — Usage gauges stay at zero until message counters exist. `PATCH` does not change `simId`; assignment stays on its own route so the session revocation still happens.
+- 2026-11-26 — Unassigning a SIM cancels that user's queued, scheduled, and held messages on the old SIM. Disabling a user or blocking a subscription moves queued and held messages to `blocked`. A read-only expiry blocks those messages and keeps the session.
+- 2026-11-26 — The API returns a password only when it generated one. The three-day reminder is an in-portal notice. The daily expiring alert is stored and not emailed. Both email and the support view stay in later milestones.
+- 2026-11-26 — `sendingBlocked` is the gate for read-only and scheduled access. The send route is M4 and has to call it. Payment CSV cells escape formula characters.
 
 ## Deviations (approved)
 

@@ -17,6 +17,7 @@ export const SAFE_TEXT = {
   pairing_not_found: "That pairing code was not accepted.",
   upgrade_required: "This app version is no longer accepted.",
   device_revoked: "This device is no longer paired.",
+  conflict: "That record is already in use.",
 } as const;
 
 export class AppError extends Error {

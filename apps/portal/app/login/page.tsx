@@ -15,9 +15,31 @@ function useHydrated(): boolean {
   );
 }
 
+function endedBecause(reason: string): string {
+  if (reason === "password_reset")
+    return "Your session ended because an administrator reset the password.";
+  if (reason === "subscription_inactive")
+    return "Your session ended because the subscription is not active.";
+  if (reason === "user_disabled") return "Your session ended because the account was disabled.";
+  if (reason === "sim_unassigned") return "Your session ended because the line was unassigned.";
+  if (reason === "expired") return "Your session ended because the subscription expired.";
+  if (reason === "admin_revoke")
+    return "Your session ended because an administrator signed you out.";
+  return "";
+}
+
+function useReason(): string {
+  return useSyncExternalStore(
+    () => () => undefined,
+    () => endedBecause(new URLSearchParams(window.location.search).get("reason") ?? ""),
+    () => "",
+  );
+}
+
 export default function LoginPage() {
   const [message, setMessage] = useState("");
   const hydrated = useHydrated();
+  const reason = useReason();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,6 +64,7 @@ export default function LoginPage() {
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
       <h1 className="mt-3 font-display text-3xl">Portal sign-in</h1>
+      {reason.length > 0 ? <p className="mt-4 max-w-sm font-body text-sm">{reason}</p> : null}
       <form
         className="mt-6 grid max-w-sm gap-3"
         data-hydrated={hydrated ? "true" : "false"}

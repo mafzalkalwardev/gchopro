@@ -20,6 +20,7 @@ export type AdminActor = {
   role: string;
   ip: string | null;
   requestId: string;
+  sessionId?: string;
 };
 
 export type HealthSettings = {

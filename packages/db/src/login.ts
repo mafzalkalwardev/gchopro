@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   AppError,
   SAFE_TEXT,
+  effectiveStatus,
   accessStep,
   decryptField,
   dummyPasswordHash,
@@ -185,7 +186,15 @@ export async function login(input: {
       subscription:
         subscription === null
           ? null
-          : { status: subscription.status, expiryBehavior: subscription.expiryBehavior },
+          : {
+              status: effectiveStatus({
+                status: subscription.status,
+                startsAt: subscription.startsAt,
+                endsAt: subscription.endsAt,
+                now,
+              }),
+              expiryBehavior: subscription.expiryBehavior,
+            },
     });
     if (!access.ok) {
       await db.transaction(async (tx) => {
