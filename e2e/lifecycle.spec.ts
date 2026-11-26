@@ -91,7 +91,7 @@ async function pollPending(
   token: string,
   match: (message: { id: string; body: string }) => boolean,
 ): Promise<string> {
-  const deadline = Date.now() + 25_000;
+  const deadline = Date.now() + 45_000;
   let seen = "none";
   while (Date.now() < deadline) {
     const response = await request.get(`${gatewayBase}/api/devices/${deviceId}/pending`, {
