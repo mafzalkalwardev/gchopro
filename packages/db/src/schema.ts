@@ -187,6 +187,8 @@ export const devices = pgTable(
     tokenPrevExpiresAt: tz("token_prev_expires_at"),
     tokenRotatedAt: tz("token_rotated_at"),
     protocolVersion: integer("protocol_version").notNull(),
+    slotsOnDevice: smallint("slots_on_device").notNull().default(0),
+    rotateRequested: boolean("rotate_requested").notNull().default(false),
     appVersion: text("app_version"),
     model: text("model"),
     androidSdk: integer("android_sdk"),
@@ -611,6 +613,21 @@ export const messages = pgTable(
       .where(sql`${table.providerId} IS NOT NULL`),
     uniqueIndex("messages_idempotency_key").on(table.idempotencyKey),
   ],
+);
+
+export const messagePartReports = pgTable(
+  "message_part_reports",
+  {
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => messages.id),
+    event: text("event").notNull(),
+    partIndex: smallint("part_index").notNull(),
+    resultCode: integer("result_code"),
+    resultName: text("result_name"),
+    reportedAt: tz("reported_at").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.messageId, table.event, table.partIndex] })],
 );
 
 export const messageTranslations = pgTable(

@@ -1,0 +1,77 @@
+export type FailureClass =
+  "transient" | "sim_problem" | "suspension_signal" | "permanent" | "unknown";
+
+const transient = new Set([
+  "RESULT_ERROR_NULL_PDU",
+  "RESULT_NO_MEMORY",
+  "RESULT_RIL_NO_MEMORY",
+  "RESULT_SYSTEM_ERROR",
+  "RESULT_RIL_SYSTEM_ERR",
+  "RESULT_MODEM_ERROR",
+  "RESULT_RIL_MODEM_ERR",
+  "RESULT_NETWORK_ERROR",
+  "RESULT_RIL_NETWORK_ERR",
+  "RESULT_RIL_SMS_SEND_FAIL_RETRY",
+  "RESULT_INTERNAL_ERROR",
+  "RESULT_RIL_INTERNAL_ERR",
+  "RESULT_NO_RESOURCES",
+  "RESULT_RIL_NO_RESOURCES",
+  "RESULT_SMS_SEND_RETRY_FAILED",
+  "RESULT_REMOTE_EXCEPTION",
+  "LEASE_EXPIRED_DEVICE_OFFLINE",
+]);
+
+const simProblem = new Set([
+  "RESULT_ERROR_RADIO_OFF",
+  "RESULT_RADIO_NOT_AVAILABLE",
+  "RESULT_RIL_RADIO_NOT_AVAILABLE",
+  "RESULT_ERROR_NO_SERVICE",
+  "RESULT_RIL_SIM_ABSENT",
+  "RESULT_INVALID_STATE",
+  "RESULT_RIL_INVALID_STATE",
+  "RESULT_RIL_INVALID_MODEM_STATE",
+  "RESULT_RIL_NETWORK_NOT_READY",
+  "LOCAL_SUBSCRIPTION_NOT_ACTIVE",
+]);
+
+const suspension = new Set([
+  "RESULT_ERROR_LIMIT_EXCEEDED",
+  "RESULT_NETWORK_REJECT",
+  "RESULT_RIL_NETWORK_REJECT",
+  "RESULT_OPERATION_NOT_ALLOWED",
+  "RESULT_RIL_OPERATION_NOT_ALLOWED",
+  "RESULT_RIL_REQUEST_RATE_LIMITED",
+  "RESULT_ERROR_FDN_CHECK_FAILURE",
+  "RESULT_ERROR_SHORT_CODE_NOT_ALLOWED",
+  "RESULT_ERROR_SHORT_CODE_NEVER_ALLOWED",
+  "RESULT_RIL_ACCESS_BARRED",
+  "RESULT_RIL_BLOCKED_DUE_TO_CALL",
+]);
+
+const permanent = new Set([
+  "RESULT_INVALID_ARGUMENTS",
+  "RESULT_RIL_INVALID_ARGUMENTS",
+  "RESULT_INVALID_SMS_FORMAT",
+  "RESULT_RIL_INVALID_SMS_FORMAT",
+  "RESULT_ENCODING_ERROR",
+  "RESULT_RIL_ENCODING_ERR",
+  "RESULT_INVALID_SMSC_ADDRESS",
+  "RESULT_RIL_INVALID_SMSC_ADDRESS",
+  "RESULT_REQUEST_NOT_SUPPORTED",
+  "RESULT_RIL_REQUEST_NOT_SUPPORTED",
+  "RESULT_CANCELLED",
+  "RESULT_RIL_CANCELLED",
+  "RESULT_NO_DEFAULT_SMS_APP",
+  "delivery_failed",
+]);
+
+export function classifyFailure(name: string, serviceState: string | null = null): FailureClass {
+  if (name === "RESULT_ERROR_GENERIC_FAILURE") {
+    return serviceState === "STATE_IN_SERVICE" ? "transient" : "sim_problem";
+  }
+  if (transient.has(name)) return "transient";
+  if (simProblem.has(name)) return "sim_problem";
+  if (suspension.has(name)) return "suspension_signal";
+  if (permanent.has(name)) return "permanent";
+  return "unknown";
+}

@@ -17,5 +17,7 @@ test-results/
 *.keystore
 android/.gradle/
 android/**/build/
+android/local.properties
+android/keystore.properties
 .DS_Store
 Thumbs.db
