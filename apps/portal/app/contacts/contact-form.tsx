@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 
 function csrf(): string {
   const row = document.cookie.split("; ").find((part) => part.startsWith("__Host-gcho_csrf="));
@@ -16,8 +16,23 @@ const SOURCES = [
   "other",
 ];
 
+function optedOutNote(): string {
+  const numbers = new URLSearchParams(window.location.search).get("optedOut");
+  if (numbers === null || numbers.length === 0) return "";
+  return `Opted out: ${numbers}`;
+}
+
+function useOptedOutNote(): string {
+  return useSyncExternalStore(
+    () => () => undefined,
+    optedOutNote,
+    () => "",
+  );
+}
+
 export function ContactForm() {
   const [error, setError] = useState("");
+  const note = useOptedOutNote();
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,7 +66,12 @@ export function ContactForm() {
       setError("The file was not imported.");
       return;
     }
-    window.location.reload();
+    const payload = (await response.json()) as { data?: { optedOutNumbers?: string[] } };
+    const numbers = payload.data?.optedOutNumbers ?? [];
+    const next = new URL(window.location.href);
+    if (numbers.length > 0) next.searchParams.set("optedOut", numbers.join(","));
+    else next.searchParams.delete("optedOut");
+    window.location.assign(`${next.pathname}${next.search}`);
   }
 
   return (
@@ -96,6 +116,7 @@ export function ContactForm() {
           }}
         />
       </label>
+      {note.length > 0 ? <p className="font-body text-sm">{note}</p> : null}
       {error.length > 0 ? <p className="font-body text-signal">{error}</p> : null}
     </div>
   );

@@ -8,6 +8,7 @@ import {
   stricterPolicy,
   type GateInput,
 } from "./gates.js";
+import { countSegments } from "./segments.js";
 import { applySignature, contentBlocked, renderTemplate } from "./template.js";
 import { windowState } from "./window.js";
 
@@ -141,6 +142,28 @@ describe("paced dispatch", () => {
   });
 });
 
+describe("caps", () => {
+  it("holds hour, day, and segment caps, and rejects when the policy says so", () => {
+    expect(
+      evaluateGate(openGate({ counts: { minute: 0, hour: 50, day: 0, segments: 0 } })),
+    ).toMatchObject({ kind: "hold", reason: "rate_hour" });
+    expect(
+      evaluateGate(openGate({ counts: { minute: 0, hour: 0, day: 300, segments: 0 } })),
+    ).toMatchObject({ kind: "hold", reason: "rate_day" });
+    expect(
+      evaluateGate(openGate({ counts: { minute: 0, hour: 0, day: 0, segments: 400 } })),
+    ).toMatchObject({ kind: "hold", reason: "rate_segments" });
+    expect(
+      evaluateGate(
+        openGate({
+          counts: { minute: 0, hour: 50, day: 0, segments: 0 },
+          overLimitAction: "reject",
+        }),
+      ),
+    ).toMatchObject({ kind: "block", reason: "limit_reached" });
+  });
+});
+
 describe("templates and windows", () => {
   it("renders known variables and reports missing ones", () => {
     expect(renderTemplate("Hi {name}", { name: "Ada" })).toEqual({ ok: true, text: "Hi Ada" });
@@ -153,6 +176,13 @@ describe("templates and windows", () => {
   it("counts the signature as part of the wire body", () => {
     expect(applySignature("Hello", { enabled: true, text: "Desk" })).toBe("Hello\n— Desk");
     expect(applySignature("Hello", { enabled: false, text: "Desk" })).toBe("Hello");
+    const body = "a".repeat(160);
+    const plain = countSegments(body);
+    const signed = countSegments(applySignature(body, { enabled: true, text: "Desk" }));
+    const unsigned = countSegments(applySignature(body, { enabled: false, text: "Desk" }));
+    expect(plain.segments).toBe(1);
+    expect(unsigned.segments).toBe(plain.segments);
+    expect(signed.segments).toBeGreaterThan(plain.segments);
   });
 
   it("blocks a keyword and a URL", () => {

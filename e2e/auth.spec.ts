@@ -33,6 +33,9 @@ test("admin authenticator, portal password change, and revocation under 5 second
     .fill(generateTOTP(decodeBase32IgnorePadding(secret), 30, 6));
   await adminPage.getByRole("button", { name: "Verify" }).click();
   await expect(adminPage.getByTestId("recovery-codes")).toBeVisible();
+  const recoveryCode = (
+    await adminPage.getByTestId("recovery-codes").locator("li").first().innerText()
+  ).trim();
   await adminPage.getByRole("button", { name: "Continue" }).click();
   await adminPage.getByLabel("Current password").fill(adminPassword);
   await adminPage.getByLabel("New password").fill("gchopro-e2e-admin-pass");
@@ -58,6 +61,60 @@ test("admin authenticator, portal password change, and revocation under 5 second
   await portalPage.getByRole("button", { name: "Accept" }).click();
   await expect(portalPage.getByTestId("sse")).toHaveText("open");
   const userId = (await portalPage.getByTestId("user-id").innerText()).trim();
+  const oldPortal =
+    (await portal.cookies("https://portal.localhost")).find(
+      (cookie) => cookie.name === "__Host-gcho_portal",
+    )?.value ?? "";
+
+  const resetCsrf = (await admin.cookies("https://admin.localhost")).find(
+    (cookie) => cookie.name === "__Host-gcho_csrf",
+  );
+  const sudo = await adminPage.request.post("https://admin.localhost:3001/api/admin/auth/sudo", {
+    headers: {
+      origin: "https://admin.localhost:3001",
+      "x-csrf-token": resetCsrf?.value ?? "",
+      "content-type": "application/json",
+    },
+    data: { password: "gchopro-e2e-admin-pass", recoveryCode },
+  });
+  expect(sudo.status()).toBe(200);
+  const resetStarted = Date.now();
+  const reset = await adminPage.request.post(
+    `https://admin.localhost:3001/api/admin/users/${userId}/reset-password`,
+    {
+      headers: {
+        origin: "https://admin.localhost:3001",
+        "x-csrf-token": resetCsrf?.value ?? "",
+        "content-type": "application/json",
+      },
+      data: { newPassword: "gchopro-e2e-reset-pass" },
+    },
+  );
+  expect(reset.status()).toBe(200);
+  await portalPage.waitForURL(
+    (url) => url.pathname === "/login" && url.searchParams.get("reason") === "password_reset",
+  );
+  expect(Date.now() - resetStarted).toBeLessThan(5000);
+  await expect(portalPage.getByText("administrator reset the password")).toBeVisible();
+  const staleContext = await browser.newContext({ ignoreHTTPSErrors: true });
+  const stale = await staleContext.request.get("https://portal.localhost:3000/api/portal/me", {
+    headers: { cookie: `__Host-gcho_portal=${oldPortal}` },
+  });
+  expect(stale.status()).toBe(401);
+  await staleContext.close();
+  await expect(portalPage.locator("form")).toHaveAttribute("data-hydrated", "true");
+  await portalPage.getByLabel("Username").fill("demo1");
+  await portalPage.getByLabel("Password").fill("gchopro-e2e-portal-pass");
+  await portalPage.getByRole("button", { name: "Sign in" }).click();
+  await expect(portalPage.getByText("Those credentials were not accepted.")).toBeVisible();
+  await portalPage.getByLabel("Password").fill("gchopro-e2e-reset-pass");
+  await portalPage.getByRole("button", { name: "Sign in" }).click();
+  await portalPage.getByLabel("Current password").fill("gchopro-e2e-reset-pass");
+  await portalPage.getByLabel("New password").fill("gchopro-e2e-after-reset");
+  await portalPage.getByRole("button", { name: "Change password" }).click();
+  const accept = portalPage.getByRole("button", { name: "Accept" });
+  if (await accept.isVisible()) await accept.click();
+  await expect(portalPage.getByTestId("sse")).toHaveText("open");
 
   const csrf = (await admin.cookies("https://admin.localhost")).find(
     (cookie) => cookie.name === "__Host-gcho_csrf",

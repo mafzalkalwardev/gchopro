@@ -507,7 +507,11 @@ export async function testTranslationProvider(token: string | undefined): Promis
   await assertSudo(session.sessionId);
   const provider = await providerFor();
   if (provider === null) return { ok: false };
-  return { ok: await provider.health() };
+  try {
+    return { ok: await provider.health() };
+  } catch {
+    return { ok: false };
+  }
 }
 
 export async function threadTranslations(ids: string[]): Promise<Map<string, ThreadTranslation>> {

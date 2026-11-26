@@ -7,7 +7,8 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test lib/ended-because.test.ts"
   },
   "dependencies": {
     "@gchopro/config": "workspace:*",
