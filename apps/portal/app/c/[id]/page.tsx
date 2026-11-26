@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import { COOKIE } from "@gchopro/core";
 import { listPortalNotices, listPortalTemplates, listThread } from "@gchopro/db";
 import { PortalNav, requirePortal } from "@/lib/gate";
+import { screenText } from "@/lib/copy";
 import { Composer, CancelButton, SendOriginal, TranslationToggle } from "../../composer";
+import { ConversationTools } from "../../conversation-tools";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +19,11 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-4xl">{thread.peer}</h1>
+      <h1 className="mt-3 font-display text-4xl">
+        <span className="sr-only">{await screenText("thread")}</span>
+        {thread.peer}
+      </h1>
+      <ConversationTools id={thread.id} archived={thread.archived} tags={thread.tags} />
       <PortalNav unread={unread} />
       {thread.optedOut ? (
         <p className="mt-6 max-w-lg border border-signal px-4 py-3 font-body">

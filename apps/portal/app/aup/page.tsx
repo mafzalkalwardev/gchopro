@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { screenCopy } from "@gchopro/core/i18n";
+import { useLocale } from "@/lib/locale";
 
 const TERMS =
   "Messages may only be sent to recipients who have consented or have an existing relationship with the sender. Purchased or scraped lists are prohibited. Recipients can reply STOP or 退订 to opt out at any time. Operation must comply with local telecommunications regulations (for example the Pakistan Telecommunication Authority where applicable) and the terms of service of each carrier.";
@@ -11,6 +13,7 @@ function csrfToken(): string {
 }
 
 export default function AupPage() {
+  const locale = useLocale();
   const [message, setMessage] = useState("");
 
   async function accept() {
@@ -27,7 +30,7 @@ export default function AupPage() {
 
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <h1 className="font-display text-3xl">Acceptable use</h1>
+      <h1 className="font-display text-3xl">{screenCopy(locale, "aup")}</h1>
       <p className="mt-4 max-w-xl font-body">{TERMS}</p>
       <button
         className="mt-6 bg-ink px-3 py-2 font-body text-paper"

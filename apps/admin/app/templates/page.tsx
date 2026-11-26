@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { screenText } from "@/lib/copy";
 import { COOKIE } from "@gchopro/core";
 import { listSharedTemplates } from "@gchopro/db";
 import { BenchNav, requireDesk } from "@/lib/desk";
@@ -14,7 +15,7 @@ export default async function TemplatesPage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
-        <h1 className="font-display text-3xl">Shared templates</h1>
+        <h1 className="font-display text-3xl">{await screenText("shared_templates")}</h1>
         <ul className="mt-8 max-w-xl space-y-3">
           {rows.templates.map((template) => (
             <li key={template.id} className="border border-ink/15 px-4 py-3">

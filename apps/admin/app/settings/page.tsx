@@ -1,7 +1,9 @@
 import { COOKIE, POLICY_TEXT, loadEnv, settingSchemas } from "@gchopro/core";
+import { screenText } from "@/lib/copy";
 import { listSettings } from "@gchopro/db";
 import { cookies } from "next/headers";
 import { BenchNav, requireDesk } from "@/lib/desk";
+import { LanguageSwitch, ThemeSwitch } from "../preferences";
 import { SettingsForms } from "./settings-form";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +64,9 @@ export default async function SettingsPage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
-        <h1 className="font-display text-3xl">Settings</h1>
+        <h1 className="font-display text-3xl">{await screenText("settings")}</h1>
+        <LanguageSwitch path="/api/admin/locale" />
+        <ThemeSwitch path="/api/admin/theme" />
         <p className="mt-4 max-w-xl font-body">{POLICY_TEXT}</p>
         <SettingsForms
           health={health}

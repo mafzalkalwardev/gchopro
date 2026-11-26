@@ -1,4 +1,5 @@
 import { listPortalNotices } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { PortalNav, requirePortal } from "@/lib/gate";
 import { NoticeList } from "./notice-list";
 
@@ -11,7 +12,7 @@ export default async function NoticesPage() {
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-4xl">Notices</h1>
+      <h1 className="mt-3 font-display text-4xl">{await screenText("notices")}</h1>
       <PortalNav unread={unread} />
       <NoticeList
         notices={notices.map((notice) => ({

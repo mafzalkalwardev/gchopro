@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppError } from "@gchopro/core";
-import { freeSims, getUser } from "@gchopro/db";
+import { freeSims, getUser, supportViewEnabled } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { BenchNav, requireDesk } from "@/lib/desk";
 import { UserActions } from "../user-actions";
 
@@ -15,12 +16,16 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   });
   if (user === null) notFound();
   const sims = await freeSims();
+  const support = await supportViewEnabled();
   return (
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
         <div className="flex items-end justify-between gap-4">
-          <h1 className="font-display text-4xl">{user.displayName}</h1>
+          <h1 className="font-display text-4xl">
+            <span className="sr-only">{await screenText("user")}</span>
+            {user.displayName}
+          </h1>
           <a
             className="border border-ink px-3 py-2 font-body text-sm"
             href={`/users/${user.id}/edit`}
@@ -28,6 +33,13 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
             Edit
           </a>
         </div>
+        {support ? (
+          <p className="mt-4 font-body">
+            <a className="underline" href={`/users/${user.id}/support`}>
+              {await screenText("support")}
+            </a>
+          </p>
+        ) : null}
         <p className="mt-2 font-mono text-sm">{user.username}</p>
         <p className="mt-4 font-body">
           Status {user.status}. Line{" "}

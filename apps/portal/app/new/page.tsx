@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { screenText } from "@/lib/copy";
 import { COOKIE } from "@gchopro/core";
 import { listPortalNotices, listPortalTemplates } from "@gchopro/db";
 import { Composer, GroupForm } from "../composer";
@@ -15,7 +16,7 @@ export default async function NewPage() {
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-4xl">New message</h1>
+      <h1 className="mt-3 font-display text-4xl">{await screenText("new_message")}</h1>
       <PortalNav unread={unread} />
       <Composer templates={templates.templates} />
       <h2 className="mt-12 font-display text-2xl">Group</h2>

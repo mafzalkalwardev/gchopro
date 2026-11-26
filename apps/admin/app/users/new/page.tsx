@@ -1,4 +1,5 @@
 import { freeSims, listPolicies } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { BenchNav, requireDesk } from "@/lib/desk";
 import { UserForm } from "../user-form";
 
@@ -12,7 +13,7 @@ export default async function NewUserPage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">Create user</h1>
+        <h1 className="font-display text-4xl">{await screenText("create_user")}</h1>
         <p className="mt-2 max-w-lg font-body text-sm">
           Leave the password blank. A generated password is shown once.
         </p>

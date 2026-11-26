@@ -1,4 +1,5 @@
 import { BenchNav, requireDesk } from "@/lib/desk";
+import { screenText } from "@/lib/copy";
 import { listPolicyRows } from "@gchopro/db";
 import { PolicyForm } from "./policy-form";
 
@@ -14,7 +15,7 @@ export default async function PoliciesPage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
-        <h1 className="font-display text-3xl">Policies</h1>
+        <h1 className="font-display text-3xl">{await screenText("policies")}</h1>
         <p className="mt-4 max-w-xl font-body">{PURPOSE}</p>
         <ul className="mt-8 max-w-xl space-y-3 font-body">
           {rows.map((row) => (

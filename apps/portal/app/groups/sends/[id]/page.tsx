@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { screenText } from "@/lib/copy";
 import { COOKIE } from "@gchopro/core";
 import { groupProgress, listPortalNotices } from "@gchopro/db";
 import { PortalNav, requirePortal } from "@/lib/gate";
@@ -16,7 +17,10 @@ export default async function GroupSendPage({ params }: { params: Promise<{ id: 
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-4xl">{progress.name ?? "Group send"}</h1>
+      <h1 className="mt-3 font-display text-4xl">
+        <span className="sr-only">{await screenText("group_send")}</span>
+        {progress.name ?? "Group send"}
+      </h1>
       <PortalNav unread={unread} />
       <dl className="mt-8 grid max-w-lg grid-cols-2 gap-3 font-mono text-sm">
         {Object.entries(progress.counts).map(([status, count]) => (

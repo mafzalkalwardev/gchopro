@@ -1,4 +1,5 @@
 import { COOKIE } from "@gchopro/core";
+import { screenText } from "@/lib/copy";
 import { listAlerts } from "@gchopro/db";
 import { cookies } from "next/headers";
 import { BenchNav, requireDesk } from "@/lib/desk";
@@ -21,7 +22,7 @@ export default async function AlertsPage({
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
-        <h1 className="font-display text-3xl">Alerts</h1>
+        <h1 className="font-display text-3xl">{await screenText("alerts")}</h1>
         <nav className="mt-4 flex gap-4 font-body text-sm">
           <a href="/alerts">Open</a>
           <a href="/alerts?status=acknowledged">Acknowledged</a>

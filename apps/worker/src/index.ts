@@ -9,6 +9,8 @@ import {
   killSwitchOn,
   processSend,
   promoteScheduled,
+  recordWorkerBeat,
+  rollupStats,
   simRuntime,
   sweepDeviceAlerts,
   sweepLeases,
@@ -26,7 +28,7 @@ type Lane = { queue: Queue; worker: Worker };
 
 const lanes = new Map<string, Lane>();
 
-logger.info(redactForLog({ phase: "m6" }), "worker started");
+logger.info(redactForLog({ phase: "m7" }), "worker started");
 
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
@@ -115,8 +117,13 @@ const killWatch = setInterval(() => {
 }, KILL_POLL_MS);
 
 async function watchHealth(): Promise<void> {
+  await recordWorkerBeat();
   await sweepDeviceAlerts();
   await deliverPendingAlerts();
+}
+
+async function watchStats(): Promise<void> {
+  await rollupStats();
 }
 
 const translateQueue = new Queue("translate", { connection });
@@ -146,6 +153,7 @@ async function watchTranslations(): Promise<void> {
 
 void watchHealth();
 void watchTranslations();
+void watchStats();
 const healthWatch = setInterval(() => {
   void watchHealth().catch((error: unknown) => {
     logger.error(
@@ -162,6 +170,14 @@ const translationWatch = setInterval(() => {
     );
   });
 }, 2000);
+const statsWatch = setInterval(() => {
+  void watchStats().catch((error: unknown) => {
+    logger.error(
+      { message: error instanceof Error ? error.message : "stats rollup failed" },
+      "stats rollup failed",
+    );
+  });
+}, 300_000);
 
 function stop(signal: string): void {
   clearInterval(subscriptions);
@@ -169,6 +185,7 @@ function stop(signal: string): void {
   clearInterval(killWatch);
   clearInterval(healthWatch);
   clearInterval(translationWatch);
+  clearInterval(statsWatch);
   void translateWorker.close();
   void translateQueue.close();
   logger.info({ signal }, "worker stopping");

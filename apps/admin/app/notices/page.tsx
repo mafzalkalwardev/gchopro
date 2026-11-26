@@ -1,4 +1,5 @@
 import { listNotices } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 import { BenchNav, requireDesk } from "@/lib/desk";
 import { DeleteNotice, NoticeForm } from "./notice-form";
 
@@ -11,7 +12,7 @@ export default async function NoticesPage() {
     <main className="min-h-screen bg-paper text-ink">
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
-        <h1 className="font-display text-4xl">Notices</h1>
+        <h1 className="font-display text-4xl">{await screenText("notices")}</h1>
         <ul className="mt-6 grid gap-4">
           {rows.map((notice) => (
             <li key={notice.id} className="border border-ink/15 p-4">

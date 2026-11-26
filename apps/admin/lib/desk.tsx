@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { COOKIE } from "@gchopro/core";
 import { isSessionRecord, readSession, sessionStep } from "@gchopro/db";
+import { screenText } from "@/lib/copy";
 
 export async function requireDesk() {
   const token = (await cookies()).get(COOKIE.admin)?.value;
@@ -13,25 +14,27 @@ export async function requireDesk() {
   return session;
 }
 
-export function BenchNav({ username }: { username: string }) {
+export async function BenchNav({ username }: { username: string }) {
   return (
     <header className="border-b border-ink/15 px-6 py-4">
       <p className="font-mono text-sm text-signal">GChoPro</p>
       <div className="mt-3 flex items-end justify-between gap-6">
         <nav className="flex flex-wrap gap-4 font-body text-sm">
-          <a href="/">Bench</a>
-          <a href="/devices">Devices</a>
-          <a href="/sims">SIMs</a>
-          <a href="/capacity">Capacity</a>
-          <a href="/users">Users</a>
-          <a href="/subscriptions">Subscriptions</a>
-          <a href="/payments">Payments</a>
-          <a href="/notices">Notices</a>
-          <a href="/policies">Policies</a>
-          <a href="/templates">Templates</a>
-          <a href="/opt-outs">Opt-outs</a>
-          <a href="/alerts">Alerts</a>
-          <a href="/settings">Settings</a>
+          <a href="/">{await screenText("nav_bench")}</a>
+          <a href="/devices">{await screenText("nav_devices")}</a>
+          <a href="/sims">{await screenText("nav_sims")}</a>
+          <a href="/capacity">{await screenText("nav_capacity")}</a>
+          <a href="/users">{await screenText("nav_users")}</a>
+          <a href="/subscriptions">{await screenText("nav_subscriptions")}</a>
+          <a href="/payments">{await screenText("nav_payments")}</a>
+          <a href="/notices">{await screenText("nav_notices")}</a>
+          <a href="/policies">{await screenText("nav_policies")}</a>
+          <a href="/templates">{await screenText("nav_templates")}</a>
+          <a href="/opt-outs">{await screenText("nav_opt_outs")}</a>
+          <a href="/alerts">{await screenText("nav_alerts")}</a>
+          <a href="/analytics">{await screenText("nav_analytics")}</a>
+          <a href="/system">{await screenText("nav_system")}</a>
+          <a href="/settings">{await screenText("nav_settings")}</a>
         </nav>
         <p className="font-mono text-sm">{username}</p>
       </div>
