@@ -15,7 +15,7 @@ export default async function ThreadPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string; filter?: string; tag?: string }>;
+  searchParams: Promise<{ q?: string; filter?: string; tag?: string; send?: string }>;
 }) {
   const session = await requirePortal();
   const { id } = await params;
@@ -23,12 +23,20 @@ export default async function ThreadPage({
   const token = (await cookies()).get(COOKIE.portal)?.value;
   const thread = await listThread(token, id);
   const templates = await listPortalTemplates(token);
+  const pending = thread.messages.some(
+    (message) =>
+      message.status === "queued" ||
+      message.status === "dispatched" ||
+      message.status === "held" ||
+      message.status === "scheduled",
+  );
   return (
     <Messages
       query={query}
       activeId={id}
       pane={
         <div className="grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)_auto]">
+          {pending ? <meta httpEquiv="refresh" content="2" /> : null}
           <header className="flex items-center gap-3 border-b border-ink/15 pb-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink/10 font-mono text-sm">
               {thread.peer.replace(/\D/gu, "").slice(-2)}
@@ -41,7 +49,7 @@ export default async function ThreadPage({
           <details className="border-b border-ink/15 font-body text-sm">
             <summary className="flex min-h-11 cursor-pointer items-center">Save contact</summary>
             <ConversationTools id={thread.id} archived={thread.archived} tags={thread.tags} />
-            <SavePeerContact number={thread.peer} heading={false} />
+            <SavePeerContact number={thread.peer} heading={false} returnTo={`/c/${id}`} />
           </details>
           <div className="min-h-0 overflow-auto">
             {thread.optedOut ? (
@@ -49,7 +57,7 @@ export default async function ThreadPage({
                 This number has opted out. Compose is turned off.
               </p>
             ) : null}
-            <ol className="grid content-start gap-3 py-4">
+            <ol className="grid content-start gap-3 py-4" data-pending={pending ? "true" : "false"}>
               {thread.messages.map((message) => {
                 const mine = message.direction === "out";
                 return (
@@ -79,7 +87,7 @@ export default async function ThreadPage({
                     {message.status === "queued" ||
                     message.status === "held" ||
                     message.status === "scheduled" ? (
-                      <CancelButton id={message.id} />
+                      <CancelButton id={message.id} returnTo={`/c/${id}`} />
                     ) : null}
                   </li>
                 );
@@ -87,7 +95,7 @@ export default async function ThreadPage({
             </ol>
           </div>
           {session.readOnly || session.scheduled || thread.optedOut ? null : (
-            <Composer to={thread.peer} templates={templates.templates} />
+            <Composer to={thread.peer} templates={templates.templates} returnTo={`/c/${id}`} />
           )}
         </div>
       }

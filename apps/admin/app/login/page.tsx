@@ -52,6 +52,8 @@ export default function LoginPage() {
         <ThemeSwitch action="/api/admin/theme" next="/login" />
         <form
           className="mt-6 grid gap-3"
+          method="post"
+          action="/api/admin/auth/login"
           data-hydrated={hydrated ? "true" : "false"}
           onSubmit={onSubmit}
         >

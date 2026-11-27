@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; filter?: string; tag?: string }>;
+  searchParams: Promise<{ q?: string; filter?: string; tag?: string; send?: string }>;
 }) {
   await requirePortal();
   const query = await searchParams;

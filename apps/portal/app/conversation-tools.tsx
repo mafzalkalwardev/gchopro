@@ -39,14 +39,32 @@ export function ConversationTools({
 
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3 font-body text-sm">
-      <button
-        className="border border-ink px-3 py-2"
-        type="button"
-        onClick={() => void save({ archived: !archived })}
+      <form
+        method="post"
+        action={`/api/portal/conversations/${id}`}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void save({ archived: !archived });
+        }}
       >
-        {screenCopy(locale, archived ? "unarchive" : "archive")}
-      </button>
-      <form className="flex gap-2" onSubmit={onTag}>
+        <input type="hidden" name="action" value="archive" />
+        <input type="hidden" name="archived" value={archived ? "false" : "true"} />
+        <input type="hidden" name="next" value={`/c/${id}`} />
+        <button className="border border-ink px-3 py-2" type="submit">
+          {screenCopy(locale, archived ? "unarchive" : "archive")}
+        </button>
+      </form>
+      <form
+        className="flex gap-2"
+        method="post"
+        action={`/api/portal/conversations/${id}`}
+        onSubmit={onTag}
+      >
+        <input type="hidden" name="action" value="tag" />
+        <input type="hidden" name="next" value={`/c/${id}`} />
+        {tags.map((tag) => (
+          <input key={tag} type="hidden" name="tags" value={tag} />
+        ))}
         <input className="border border-ink bg-paper px-3 py-2" name="tag" maxLength={40} />
         <button className="border border-ink px-3 py-2" type="submit">
           {screenCopy(locale, "tag")}

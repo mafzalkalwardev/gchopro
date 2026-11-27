@@ -33,7 +33,12 @@ export default function PasswordPage() {
     <main className="gate bg-paper text-ink">
       <section className="w-full max-w-sm border border-ink/15 px-5 py-8 sm:px-8">
         <h1 className="font-display text-3xl">{screenCopy(locale, "admin_password")}</h1>
-        <form className="mt-6 grid gap-3" onSubmit={onSubmit}>
+        <form
+          className="mt-6 grid gap-3"
+          method="post"
+          action="/api/admin/auth/password"
+          onSubmit={onSubmit}
+        >
           <label className="grid gap-1 font-body text-sm">
             Current password
             <input

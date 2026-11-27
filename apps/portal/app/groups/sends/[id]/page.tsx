@@ -3,6 +3,7 @@ import { screenText } from "@/lib/copy";
 import { COOKIE } from "@gchopro/core";
 import { groupProgress, listPortalNotices } from "@gchopro/db";
 import { PortalNav, requirePortal } from "@/lib/gate";
+import { SessionWatch } from "../../../session-watch";
 import { CancelRemaining } from "../cancel-remaining";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +15,14 @@ export default async function GroupSendPage({ params }: { params: Promise<{ id: 
   const notices = await listPortalNotices(session.userId);
   const unread = notices.filter((notice) => notice.read !== true).length;
   const progress = await groupProgress(token, id);
+  const pending = progress.messages.some((message) =>
+    ["queued", "dispatched", "held", "scheduled"].includes(message.status),
+  );
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
       <PortalNav unread={unread} username={session.username} userId={session.userId} />
+      {pending ? <meta httpEquiv="refresh" content="2" /> : null}
+      <SessionWatch />
 
       <h1 className="mt-3 font-display text-4xl">
         <span className="sr-only">{await screenText("group_send")}</span>
@@ -30,7 +36,10 @@ export default async function GroupSendPage({ params }: { params: Promise<{ id: 
           </div>
         ))}
       </dl>
-      <table className="mt-8 w-full max-w-3xl font-body text-sm">
+      <table
+        className="mt-8 w-full max-w-3xl font-body text-sm"
+        data-pending={pending ? "true" : "false"}
+      >
         <tbody>
           {progress.messages.map((message) => (
             <tr key={message.id} className="border-b border-ink/10">

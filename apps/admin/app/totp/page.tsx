@@ -60,13 +60,11 @@ export default function TotpPage() {
               <li key={code}>{code}</li>
             ))}
           </ul>
-          <button
-            className="mt-6 w-full bg-ink font-body text-paper"
-            type="button"
-            onClick={() => window.location.assign("/")}
-          >
-            Continue
-          </button>
+          <form className="mt-6" method="get" action="/">
+            <button className="w-full bg-ink font-body text-paper" type="submit">
+              Continue
+            </button>
+          </form>
         </section>
       </main>
     );
@@ -79,7 +77,12 @@ export default function TotpPage() {
         <p data-testid="totp-secret" className="mt-4 break-all font-mono text-sm">
           {secret}
         </p>
-        <form className="mt-6 grid gap-3" onSubmit={onSubmit}>
+        <form
+          className="mt-6 grid gap-3"
+          method="post"
+          action="/api/admin/auth/totp/verify"
+          onSubmit={onSubmit}
+        >
           <label className="grid gap-1 font-body text-sm">
             Authenticator code
             <input

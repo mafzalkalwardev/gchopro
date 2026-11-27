@@ -7,10 +7,11 @@ function csrf(): string {
 
 export function CancelRemaining({ id }: { id: string }) {
   return (
-    <button
-      className="mt-6 border border-ink px-4 py-2 font-body"
-      type="button"
-      onClick={() => {
+    <form
+      method="post"
+      action={`/api/portal/group-sends/${id}/cancel`}
+      onSubmit={(event) => {
+        event.preventDefault();
         void fetch(`/api/portal/group-sends/${id}/cancel`, {
           method: "POST",
           headers: { "x-csrf-token": csrf() },
@@ -19,7 +20,10 @@ export function CancelRemaining({ id }: { id: string }) {
         });
       }}
     >
-      Cancel remaining
-    </button>
+      <input type="hidden" name="next" value={`/groups/sends/${id}`} />
+      <button className="mt-6 border border-ink px-4 py-2 font-body" type="submit">
+        Cancel remaining
+      </button>
+    </form>
   );
 }

@@ -148,7 +148,13 @@ export function ContactForm() {
 
   return (
     <div className="mt-8 grid max-w-xl gap-8">
-      <form className="grid gap-3" onSubmit={(event) => void save(event)}>
+      <form
+        className="grid gap-3"
+        method="post"
+        action="/api/portal/contacts"
+        onSubmit={(event) => void save(event)}
+      >
+        <input type="hidden" name="next" value="/contacts" />
         <h2 className="font-display text-2xl">Save a contact</h2>
         <Fields />
         <button className="mt-1 w-full bg-ink font-body text-paper" type="submit">
@@ -191,7 +197,19 @@ export function ContactEditor({ contact }: { contact: SavedContact }) {
   }
 
   return (
-    <form className="grid gap-3" onSubmit={(event) => void save(event)}>
+    <form
+      className="grid gap-3"
+      method="post"
+      action={`/api/portal/contacts/${contact.id}`}
+      onSubmit={(event) => void save(event)}
+    >
+      <input type="hidden" name="next" value="/contacts" />
+      {contact.consentAt ? (
+        <input type="hidden" name="consentAt" value={contact.consentAt} />
+      ) : null}
+      {contact.tags.map((tag) => (
+        <input key={tag} type="hidden" name="tags" value={tag} />
+      ))}
       <Fields contact={contact} />
       <button className="mt-1 w-full bg-ink font-body text-paper md:w-fit" type="submit">
         Save
@@ -201,7 +219,15 @@ export function ContactEditor({ contact }: { contact: SavedContact }) {
   );
 }
 
-export function SavePeerContact({ number, heading = true }: { number: string; heading?: boolean }) {
+export function SavePeerContact({
+  number,
+  heading = true,
+  returnTo = "/contacts",
+}: {
+  number: string;
+  heading?: boolean;
+  returnTo?: string;
+}) {
   const [error, setError] = useState("");
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -220,7 +246,13 @@ export function SavePeerContact({ number, heading = true }: { number: string; he
   if (number.length === 0) return null;
 
   return (
-    <form className="mt-4 grid max-w-xl gap-3" onSubmit={(event) => void save(event)}>
+    <form
+      className="mt-4 grid max-w-xl gap-3"
+      method="post"
+      action="/api/portal/contacts"
+      onSubmit={(event) => void save(event)}
+    >
+      <input type="hidden" name="next" value={returnTo} />
       {heading ? <h2 className="font-display text-2xl">Save contact</h2> : null}
       <Fields numberLocked={number} />
       <button className="mt-1 w-full bg-ink font-body text-paper" type="submit">

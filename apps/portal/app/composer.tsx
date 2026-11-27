@@ -23,9 +23,11 @@ type Payload = {
 export function Composer({
   to,
   templates,
+  returnTo = "/",
 }: {
   to?: string;
   templates: { id: string; name: string; shared: boolean }[];
+  returnTo?: string;
 }) {
   const [body, setBody] = useState("");
   const [chips, setChips] = useState<string[]>([]);
@@ -114,7 +116,13 @@ export function Composer({
   }
 
   return (
-    <form className="grid content-start" onSubmit={(event) => void send(event)}>
+    <form
+      className="grid content-start"
+      method="post"
+      action="/api/portal/messages"
+      onSubmit={(event) => void send(event)}
+    >
+      <input type="hidden" name="next" value={returnTo} />
       {to === undefined ? (
         <label className="flex min-h-11 flex-wrap items-center gap-2 border-b border-ink/15 px-1 py-2 font-body text-sm">
           <span>To</span>
@@ -132,6 +140,7 @@ export function Composer({
           ))}
           <input
             className="min-h-11 min-w-40 flex-1 border-0 bg-transparent px-1 font-mono outline-none"
+            name="to"
             value={draft}
             placeholder="Number, then Enter"
             onChange={(event) => setDraft(event.target.value)}
@@ -139,13 +148,16 @@ export function Composer({
             required={chips.length === 0}
           />
         </label>
-      ) : null}
+      ) : (
+        <input type="hidden" name="to" value={to} />
+      )}
       <div>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-t border-ink/15 pt-3">
           <label className="grid min-w-0 flex-1">
             <span className="sr-only">Message</span>
             <textarea
               className="min-h-11 rounded-3xl border border-ink/20 bg-paper px-4 py-2"
+              name="body"
               rows={1}
               placeholder="Text message"
               value={body}
@@ -275,12 +287,13 @@ export function SendOriginal({ id }: { id: string }) {
   );
 }
 
-export function CancelButton({ id }: { id: string }) {
+export function CancelButton({ id, returnTo = "/" }: { id: string; returnTo?: string }) {
   return (
-    <button
-      className="mt-2 border border-ink/30 px-3 font-mono text-xs"
-      type="button"
-      onClick={() => {
+    <form
+      method="post"
+      action={`/api/portal/messages/${id}/cancel`}
+      onSubmit={(event) => {
+        event.preventDefault();
         void fetch(`/api/portal/messages/${id}/cancel`, {
           method: "POST",
           headers: { "x-csrf-token": csrf() },
@@ -289,7 +302,10 @@ export function CancelButton({ id }: { id: string }) {
         });
       }}
     >
-      Cancel
-    </button>
+      <input type="hidden" name="next" value={returnTo} />
+      <button className="mt-2 border border-ink/30 px-3 font-mono text-xs" type="submit">
+        Cancel
+      </button>
+    </form>
   );
 }

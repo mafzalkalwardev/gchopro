@@ -1,12 +1,17 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { COOKIE } from "@gchopro/core";
+import { COOKIE, SAFE_TEXT } from "@gchopro/core";
 import { listConversations, listPortalNotices, portalProfile } from "@gchopro/db";
 import { screenText } from "@/lib/copy";
 import { PortalNav, requirePortal } from "@/lib/gate";
 import { SessionWatch } from "./session-watch";
 
-type Query = { q?: string; filter?: string; tag?: string };
+type Query = { q?: string; filter?: string; tag?: string; send?: string };
+
+function sendNotice(code: string | undefined): string {
+  if (code === undefined || !(code in SAFE_TEXT)) return "";
+  return SAFE_TEXT[code as keyof typeof SAFE_TEXT];
+}
 
 function mark(peer: string): string {
   const digits = peer.replace(/\D/gu, "");
@@ -66,6 +71,11 @@ export async function Messages({
           {await screenText("nav_new")}
         </a>
       </div>
+      {sendNotice(query.send).length > 0 ? (
+        <p className="mb-3 max-w-lg border border-signal px-4 py-3 font-body text-sm">
+          {sendNotice(query.send)}
+        </p>
+      ) : null}
       {session.readOnly ? (
         <p className="mb-4 max-w-lg border border-ink/20 px-4 py-3 font-body">
           This subscription is read-only. Sending is turned off.
