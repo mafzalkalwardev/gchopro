@@ -17,9 +17,9 @@ export default async function PoliciesPage() {
       <section className="px-6 py-10">
         <h1 className="font-display text-3xl">{await screenText("policies")}</h1>
         <p className="mt-4 max-w-xl font-body">{PURPOSE}</p>
-        <ul className="mt-8 max-w-xl space-y-3 font-body">
+        <ul className="tape mt-8 font-body">
           {rows.map((row) => (
-            <li key={row.id} className="border border-ink/15 px-4 py-3">
+            <li key={row.id}>
               <p>
                 {row.name}
                 {row.isDefault ? " · default" : ""}

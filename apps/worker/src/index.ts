@@ -10,6 +10,7 @@ import {
 import {
   claimTranslationJobs,
   deliverPendingAlerts,
+  dueRecent,
   dueWork,
   getDb,
   getRedis,
@@ -35,7 +36,7 @@ const requestId = randomUUID();
 const logger = createLogger(env.LOG_LEVEL, { requestId });
 const connection = { url: env.REDIS_URL, maxRetriesPerRequest: null };
 
-type Lane = { queue: Queue; worker: Worker };
+type Lane = { queue: Queue; worker: Worker; running: boolean };
 
 const lanes = new Map<string, Lane>();
 
@@ -44,21 +45,33 @@ logger.info(redactForLog({ phase: "m8" }), "worker started");
 async function sendJob(job: Job<{ messageId: string }>): Promise<void> {
   const result = await processSend(job.data.messageId);
   if (result.kind === "hold" || result.kind === "wait") {
-    await job.moveToDelayed(Date.now() + result.delayMs);
+    if (job.token === undefined) throw new Error("send job has no lock token");
+    await job.moveToDelayed(Date.now() + result.delayMs, job.token);
     throw new DelayedError();
   }
 }
 
 async function laneFor(simId: string, running: boolean): Promise<Lane> {
   const existing = lanes.get(simId);
-  const lane = existing ?? {
+  if (existing) {
+    if (existing.running !== running) {
+      if (running) await existing.worker.resume();
+      else await existing.worker.pause();
+      existing.running = running;
+    }
+    return existing;
+  }
+  const created: Lane = {
     queue: new Queue(simQueueName(simId), { connection }),
     worker: new Worker(simQueueName(simId), sendJob, { connection, concurrency: 1 }),
+    running: true,
   };
-  if (!existing) lanes.set(simId, lane);
-  if (running) await lane.worker.resume();
-  else await lane.worker.pause();
-  return lane;
+  lanes.set(simId, created);
+  if (!running) {
+    await created.worker.pause();
+    created.running = false;
+  }
+  return created;
 }
 
 async function pump(): Promise<void> {
@@ -72,17 +85,31 @@ async function pump(): Promise<void> {
     if (!sim.assignable) await holdUnhealthy(sim.simId);
   }
   if (killed) return;
+  const recent = await dueRecent();
   const due = await dueWork();
-  for (const item of due) {
+  const seen = new Set<string>();
+  const ordered: { id: string; simId: string }[] = [];
+  for (const item of [...recent, ...due]) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    ordered.push(item);
+  }
+  for (const item of ordered) {
     const sim = runtime.find((row) => row.simId === item.simId);
     if (sim?.assignable !== true) continue;
     const lane = lanes.get(item.simId);
     if (lane === undefined) continue;
     try {
+      const existing = await lane.queue.getJob(item.id);
+      if (existing) {
+        const state = await existing.getState();
+        if (state === "failed" || state === "completed") await existing.remove();
+        else continue;
+      }
       await lane.queue.add(
         "send",
         { messageId: item.id },
-        { jobId: item.id, removeOnComplete: true },
+        { jobId: item.id, removeOnComplete: true, removeOnFail: 10 },
       );
     } catch {
       // The job is already waiting on this SIM queue.
@@ -103,28 +130,37 @@ async function beat(): Promise<void> {
 }
 
 async function watchKill(): Promise<void> {
-  const killed = await killSwitchOn(getDb());
+  if (!(await killSwitchOn(getDb()))) return;
   for (const lane of lanes.values()) {
-    if (killed) await lane.worker.pause();
-    else await lane.worker.resume();
+    if (!lane.running) continue;
+    await lane.worker.pause();
+    lane.running = false;
   }
 }
 
 void beat();
-void pump();
+function notePumpFailure(error: unknown): void {
+  logger.error(
+    { message: error instanceof Error ? error.message : "pump failed" },
+    "pacing pump failed",
+  );
+}
+
+let laneChain: Promise<void> = Promise.resolve();
+
+function exclusive(task: () => Promise<void>): void {
+  laneChain = laneChain.then(task).catch(notePumpFailure);
+}
+
+exclusive(() => pump());
 const subscriptions = setInterval(() => {
   void beat();
 }, 60_000);
 const pacing = setInterval(() => {
-  void pump().catch((error: unknown) => {
-    logger.error(
-      { message: error instanceof Error ? error.message : "pump failed" },
-      "pacing pump failed",
-    );
-  });
+  exclusive(() => pump());
 }, 2000);
 const killWatch = setInterval(() => {
-  void watchKill().catch(() => undefined);
+  exclusive(() => watchKill());
 }, KILL_POLL_MS);
 
 async function watchHealth(): Promise<void> {

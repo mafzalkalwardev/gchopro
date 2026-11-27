@@ -2,6 +2,7 @@ export {
   assertSeedAllowed,
   EnvError,
   loadEnv,
+  requireHost,
   parseEnv,
   parseSeedIdentity,
   type AppEnv,

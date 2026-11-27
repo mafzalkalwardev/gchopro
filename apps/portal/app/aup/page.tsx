@@ -1,45 +1,35 @@
-"use client";
-
-import { useState } from "react";
-import { screenCopy } from "@gchopro/core/i18n";
-import { useLocale } from "@/lib/locale";
+import { SAFE_TEXT } from "@gchopro/core";
+import { screenText } from "@/lib/copy";
 
 const TERMS =
   "Messages may only be sent to recipients who have consented or have an existing relationship with the sender. Purchased or scraped lists are prohibited. Recipients can reply STOP or 退订 to opt out at any time. Operation must comply with local telecommunications regulations (for example the Pakistan Telecommunication Authority where applicable) and the terms of service of each carrier.";
 
-function csrfToken(): string {
-  const row = document.cookie.split("; ").find((part) => part.startsWith("__Host-gcho_csrf="));
-  return row === undefined ? "" : decodeURIComponent(row.slice("__Host-gcho_csrf=".length));
+export const dynamic = "force-dynamic";
+
+function notice(reason: string | undefined): string {
+  if (reason === undefined || !(reason in SAFE_TEXT)) return "";
+  return SAFE_TEXT[reason as keyof typeof SAFE_TEXT];
 }
 
-export default function AupPage() {
-  const locale = useLocale();
-  const [message, setMessage] = useState("");
-
-  async function accept() {
-    const response = await fetch("/api/portal/aup", {
-      method: "POST",
-      headers: { "x-csrf-token": csrfToken() },
-    });
-    if (!response.ok) {
-      setMessage("The terms could not be recorded.");
-      return;
-    }
-    window.location.assign("/");
-  }
-
+export default async function AupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reason?: string }>;
+}) {
+  const query = await searchParams;
+  const text = notice(query.reason);
   return (
-    <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <h1 className="font-display text-3xl">{screenCopy(locale, "aup")}</h1>
-      <p className="mt-4 max-w-xl font-body">{TERMS}</p>
-      <button
-        className="mt-6 bg-ink px-3 py-2 font-body text-paper"
-        type="button"
-        onClick={() => void accept()}
-      >
-        Accept
-      </button>
-      {message.length > 0 ? <p className="mt-3 font-body text-sm text-signal">{message}</p> : null}
+    <main className="gate bg-paper text-ink">
+      <section className="w-full max-w-lg border border-ink/15 px-5 py-8 sm:px-8">
+        <h1 className="font-display text-3xl">{await screenText("aup")}</h1>
+        <p className="mt-4 font-body">{TERMS}</p>
+        <form className="mt-6" method="post" action="/api/portal/aup">
+          <button className="w-full bg-ink font-body text-paper" type="submit">
+            Accept
+          </button>
+        </form>
+        {text.length > 0 ? <p className="mt-3 font-body text-sm text-signal">{text}</p> : null}
+      </section>
     </main>
   );
 }

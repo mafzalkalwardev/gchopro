@@ -21,7 +21,8 @@ class MainActivity : Activity() {
         refresh(status)
         findViewById<Button>(R.id.register).setOnClickListener {
             val url = baseUrl.text.toString().trim()
-            if (!url.startsWith("https://")) {
+            val cleartextLab = BuildConfig.DEBUG && url.startsWith("http://")
+            if (!url.startsWith("https://") && !cleartextLab) {
                 status.text = "The gateway address must be HTTPS."
                 return@setOnClickListener
             }

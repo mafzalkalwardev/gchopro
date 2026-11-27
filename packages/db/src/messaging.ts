@@ -72,8 +72,8 @@ const FALLBACK: PolicyNumbers = {
   perDay: 300,
   segmentsPerDay: 400,
   maxGroupRecipients: 50,
-  windowStart: "09:00:00",
-  windowEnd: "20:00:00",
+  windowStart: "00:00:00",
+  windowEnd: "24:00:00",
   windowDays: [1, 2, 3, 4, 5, 6, 7],
   overLimitAction: "hold",
 };
@@ -1154,6 +1154,15 @@ export async function dueWork(limit = 100): Promise<{ id: string; simId: string 
     .from(messages)
     .where(inArray(messages.status, ["queued", "held", "scheduled"]))
     .orderBy(asc(messages.createdAt))
+    .limit(limit);
+}
+
+export async function dueRecent(limit = 20): Promise<{ id: string; simId: string }[]> {
+  return getDb()
+    .select({ id: messages.id, simId: messages.simId })
+    .from(messages)
+    .where(inArray(messages.status, ["queued", "held", "scheduled"]))
+    .orderBy(desc(messages.createdAt))
     .limit(limit);
 }
 

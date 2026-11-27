@@ -28,7 +28,7 @@ export default async function SubscriptionsPage({
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
         <h1 className="font-display text-4xl">{await screenText("subscriptions")}</h1>
-        <nav className="mt-4 flex gap-4 font-body text-sm">
+        <nav className="mt-4 flex flex-wrap gap-4 font-body text-sm">
           {tabs.map((tab) => (
             <a key={tab.label} href={tab.href}>
               {tab.label}

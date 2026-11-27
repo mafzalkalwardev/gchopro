@@ -125,7 +125,7 @@ export default async function AnalyticsPage({
           {board.map((row) => (
             <li key={row.userId}>
               <a
-                className="underline"
+                className="inline-flex min-h-11 items-center"
                 href={`/analytics?userId=${row.userId}&from=${report.from}&to=${report.to}`}
               >
                 {row.username}
@@ -144,10 +144,10 @@ export default async function AnalyticsPage({
           </ul>
         ) : null}
         <p className="mt-6 flex gap-4 font-body text-sm">
-          <a className="underline" href={usersExport}>
+          <a className="inline-flex min-h-11 items-center" href={usersExport}>
             {await screenText("export_users")}
           </a>
-          <a className="underline" href={simsExport}>
+          <a className="inline-flex min-h-11 items-center" href={simsExport}>
             {await screenText("export_sims")}
           </a>
         </p>

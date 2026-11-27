@@ -23,15 +23,15 @@ export default async function AlertsPage({
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
         <h1 className="font-display text-3xl">{await screenText("alerts")}</h1>
-        <nav className="mt-4 flex gap-4 font-body text-sm">
+        <nav className="mt-4 flex flex-wrap gap-4 font-body text-sm">
           <a href="/alerts">Open</a>
           <a href="/alerts?status=acknowledged">Acknowledged</a>
           <a href="/alerts?status=resolved">Resolved</a>
         </nav>
-        <ul className="mt-8 max-w-xl space-y-3">
+        <ul className="tape mt-8">
           {rows.length === 0 ? <li className="font-body">None.</li> : null}
           {rows.map((row) => (
-            <li key={row.id} className="border border-ink/15 px-4 py-3">
+            <li key={row.id}>
               <p className="font-body">{row.title}</p>
               <p className="font-mono text-xs">
                 {row.severity} · {row.type} · {row.createdAt}

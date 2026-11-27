@@ -17,9 +17,11 @@ COPY . .
 
 # The build needs a valid env file. It is created and removed in this layer.
 # Migrations run from TypeScript source, so tsx stays installed.
+# next/font can throw reading a null font table on an unchanged tree. Retry the
+# same build. The fonts stay as they are.
 RUN pnpm install --frozen-lockfile \
   && node scripts/write-ci-env.mjs \
-  && pnpm build \
+  && (pnpm build || pnpm build || pnpm build) \
   && rm -f .env \
   && chown -R node:node /app
 

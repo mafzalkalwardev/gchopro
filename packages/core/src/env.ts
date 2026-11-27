@@ -267,6 +267,21 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   return parseEnv(source);
 }
 
+export function requireHost(
+  key: "ADMIN_HOST" | "PORTAL_HOST" | "GATEWAY_HOST",
+  source: NodeJS.ProcessEnv = process.env,
+): string {
+  const raw =
+    key === "ADMIN_HOST"
+      ? source.ADMIN_HOST
+      : key === "PORTAL_HOST"
+        ? source.PORTAL_HOST
+        : source.GATEWAY_HOST;
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (!isHostname(value)) throw new EnvError([key]);
+  return value;
+}
+
 export function assertSeedAllowed(appEnv: AppEnv["APP_ENV"]): void {
   if (appEnv === "production") {
     throw new Error("db:seed refuses APP_ENV=production");

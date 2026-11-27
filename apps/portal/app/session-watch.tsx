@@ -1,14 +1,27 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export function SessionWatch() {
+  const router = useRouter();
   const [state, setState] = useState("connecting");
 
   useEffect(() => {
+    document.querySelector('meta[http-equiv="refresh"]')?.remove();
     const source = new EventSource("/api/portal/events");
+    let refreshTimer = 0;
+    const refresh = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => router.refresh(), 200);
+    };
+    const follow = window.setInterval(() => {
+      if (document.querySelector("[data-pending='true']")) refresh();
+    }, 2000);
     source.onopen = () => setState("open");
+    source.addEventListener("message.status", refresh);
     source.addEventListener("message.received", () => {
+      refresh();
       if (localStorage.getItem("gcho_sound") !== "0") {
         const audio = new AudioContext();
         const tone = audio.createOscillator();
@@ -39,11 +52,15 @@ export function SessionWatch() {
         }
       });
     });
-    return () => source.close();
-  }, []);
+    return () => {
+      window.clearInterval(follow);
+      window.clearTimeout(refreshTimer);
+      source.close();
+    };
+  }, [router]);
 
   return (
-    <p data-testid="sse" className="mt-4 font-mono text-sm">
+    <p data-testid="sse" className="sr-only">
       {state}
     </p>
   );

@@ -23,19 +23,19 @@ export type ChartPoint = {
 export function TrafficChart({ points }: { points: ChartPoint[] }) {
   const rows = points.map((point) => ({ ...point, deliveryRatio: point.deliveryRatio ?? 0 }));
   return (
-    <div className="mt-8 h-72 w-full max-w-3xl">
+    <div className="mt-8 h-72 w-full min-w-0 max-w-3xl">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={rows}>
-          <CartesianGrid stroke="#1C1915" strokeOpacity={0.15} />
+          <CartesianGrid stroke="var(--color-ink)" strokeOpacity={0.15} />
           <XAxis dataKey="bucket" />
           <YAxis yAxisId="count" />
           <YAxis yAxisId="ratio" orientation="right" domain={[0, 1]} />
           <Tooltip />
-          <Bar yAxisId="count" dataKey="sent" fill="#1C1915" />
-          <Bar yAxisId="count" dataKey="delivered" fill="#C46B1A" />
-          <Bar yAxisId="count" dataKey="failed" fill="#1C1915" fillOpacity={0.35} />
-          <Bar yAxisId="count" dataKey="received" fill="#C46B1A" fillOpacity={0.45} />
-          <Line yAxisId="ratio" dataKey="deliveryRatio" stroke="#C46B1A" dot={false} />
+          <Bar yAxisId="count" dataKey="sent" fill="var(--color-ink)" />
+          <Bar yAxisId="count" dataKey="delivered" fill="var(--color-signal)" />
+          <Bar yAxisId="count" dataKey="failed" fill="var(--color-ink)" fillOpacity={0.35} />
+          <Bar yAxisId="count" dataKey="received" fill="var(--color-signal)" fillOpacity={0.45} />
+          <Line yAxisId="ratio" dataKey="deliveryRatio" stroke="var(--color-signal)" dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>

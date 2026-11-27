@@ -156,6 +156,9 @@ Checked boxes are assertions from the unit, integration, or browser suite on CI.
 - 2026-11-26 — BullMQ 6 rejects a colon in a queue name. Each SIM still has its own queue at concurrency 1. The name is `send-sim-{id}` rather than `send:sim:{id}`. Jobs are still never moved to another SIM.
 - 2026-11-26 — BullMQ 6 also rejects a custom job id with a single colon. Translation jobs use `{role}-{messageId}`.
 - 2026-11-26 — The worker image installs the Postgres 16 client. Bookworm's default client is 15 and cannot dump this server. Restore drops `SET transaction_timeout` because a Postgres 17 or newer client writes it and Postgres 16 rejects it.
+- 2026-11-26 — CSV import keeps the opted-out count and also returns those numbers on `optedOutNumbers`. Opt-out scope stays global.
+- 2026-11-26 — A translation provider test that cannot reach the provider returns `{ ok: false }`. `none` still turns translation off.
+- 2026-11-26 — The production image retries `pnpm build` so a next/font failure on an unchanged tree does not fail the image. The fonts stay as they are.
 
 ## Deviations (approved)
 

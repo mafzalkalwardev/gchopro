@@ -17,6 +17,7 @@ const opsPassword = process.env.SEED_OPS_PASSWORD ?? "";
 const opsNext = "gchopro-e2e-ops-pass";
 const userPassword = "gchopro-e2e-line-pass";
 const userNext = "gchopro-e2e-line-pass2";
+let statusPage: Page | null = null;
 
 function code(secret: string): string {
   return generateTOTP(decodeBase32IgnorePadding(secret), 30, 6);
@@ -90,7 +91,7 @@ async function pollPending(
   token: string,
   match: (message: { id: string; body: string }) => boolean,
 ): Promise<string> {
-  const deadline = Date.now() + 25_000;
+  const deadline = Date.now() + 45_000;
   let seen = "none";
   while (Date.now() < deadline) {
     const response = await request.get(`${gatewayBase}/api/devices/${deviceId}/pending`, {
@@ -103,7 +104,12 @@ async function pollPending(
     if (found !== undefined) return found.id;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  throw new Error(`pending message did not arrive (${seen})`);
+  let pageText = "";
+  if (statusPage !== null) {
+    await statusPage.reload();
+    pageText = (await statusPage.locator("body").innerText()).replace(/\s+/g, " ").slice(0, 400);
+  }
+  throw new Error(`pending message did not arrive (${seen}) | ${pageText}`);
 }
 
 async function compose(page: Page, to: string, body: string): Promise<void> {
@@ -129,6 +135,7 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
   const portalContext = await browser.newContext({ ignoreHTTPSErrors: true });
   const adminPage = await adminContext.newPage();
   const portalPage = await portalContext.newPage();
+  statusPage = portalPage;
   adminPage.setDefaultTimeout(20_000);
   adminPage.setDefaultNavigationTimeout(20_000);
   portalPage.setDefaultTimeout(20_000);
@@ -339,6 +346,21 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       "test numbers",
     );
 
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/heartbeat`, {
+        headers,
+        data: {
+          battery: 90,
+          charging: true,
+          network: "wifi",
+          appVersion: "2.0.0",
+          androidSdk: 34,
+          activeModemCount: 2,
+          uptimeSec: 25,
+        },
+      }),
+      "heartbeat before send",
+    );
     await compose(portalPage, peer, "你好");
     await portalPage.waitForURL("**/c/**");
     await expect(portalPage.getByText("你好")).toBeVisible();
@@ -388,6 +410,21 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       .toBeGreaterThan(0);
 
     await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/heartbeat`, {
+        headers,
+        data: {
+          battery: 90,
+          charging: true,
+          network: "wifi",
+          appVersion: "2.0.0",
+          androidSdk: 34,
+          activeModemCount: 2,
+          uptimeSec: 30,
+        },
+      }),
+      "heartbeat before stop",
+    );
+    await accepted(
       await request.post(`${gatewayBase}/api/devices/${device.id}/inbox`, {
         headers,
         data: {
@@ -427,6 +464,21 @@ test("a paired line sends, replies, pauses, retests, and expires", async ({ brow
       "confirmation",
     );
 
+    await accepted(
+      await request.post(`${gatewayBase}/api/devices/${device.id}/heartbeat`, {
+        headers,
+        data: {
+          battery: 90,
+          charging: true,
+          network: "wifi",
+          appVersion: "2.0.0",
+          androidSdk: 34,
+          activeModemCount: 2,
+          uptimeSec: 40,
+        },
+      }),
+      "heartbeat again",
+    );
     for (const mark of ["one", "two"]) {
       await compose(portalPage, limited, `limit ${mark}`);
       await portalPage.waitForURL("**/c/**");

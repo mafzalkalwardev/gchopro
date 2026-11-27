@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { assertSeedAllowed, EnvError, parseEnv, parseSeedIdentity } from "./env.js";
+import { assertSeedAllowed, EnvError, parseEnv, parseSeedIdentity, requireHost } from "./env.js";
 
 const key = Buffer.alloc(32, 7).toString("base64");
 
@@ -84,6 +84,17 @@ describe("parseEnv", () => {
 describe("parseSeedIdentity", () => {
   it("requires the seed username and password", () => {
     expect(() => parseSeedIdentity({})).toThrow(/SEED_ADMIN_USERNAME/u);
+  });
+});
+
+describe("requireHost", () => {
+  it("reads one hostname without the rest of the environment", () => {
+    expect(requireHost("ADMIN_HOST", { ADMIN_HOST: "localhost" })).toBe("localhost");
+  });
+
+  it("rejects a missing or non-hostname value", () => {
+    expect(() => requireHost("PORTAL_HOST", {})).toThrow(EnvError);
+    expect(() => requireHost("PORTAL_HOST", { PORTAL_HOST: "http://localhost" })).toThrow(EnvError);
   });
 });
 

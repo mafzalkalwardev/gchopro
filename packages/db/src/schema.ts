@@ -227,8 +227,8 @@ export const rateLimitPolicies = pgTable(
     perDay: integer("per_day").notNull().default(300),
     segmentsPerDay: integer("segments_per_day").notNull().default(400),
     maxGroupRecipients: integer("max_group_recipients").notNull().default(50),
-    windowStart: time("window_start").notNull().default("09:00:00"),
-    windowEnd: time("window_end").notNull().default("20:00:00"),
+    windowStart: time("window_start").notNull().default("00:00:00"),
+    windowEnd: time("window_end").notNull().default("24:00:00"),
     windowDays: smallint("window_days")
       .array()
       .notNull()

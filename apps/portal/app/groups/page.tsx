@@ -16,10 +16,14 @@ export default async function GroupsPage() {
   const contacts = await listContacts(token);
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <p className="font-mono text-sm text-signal">GChoPro</p>
+      <PortalNav unread={unread} username={session.username} userId={session.userId} />
+
       <h1 className="mt-3 font-display text-4xl">{await screenText("groups")}</h1>
-      <PortalNav unread={unread} />
-      <ul className="mt-8 max-w-xl space-y-2 font-body">
+      <p className="mt-3 max-w-xl font-body text-sm text-ink/70">
+        To message several numbers at once, open the inbox, choose New, and press Enter after each
+        number.
+      </p>
+      <ul className="tape mt-8 font-body">
         {groups.groups.map((group) => (
           <li key={group.id}>
             {group.name} · {group.contactIds.length} members

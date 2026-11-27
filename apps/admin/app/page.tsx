@@ -14,33 +14,30 @@ export default async function HomePage() {
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
         <h1 className="font-display text-3xl">{await screenText("bench")}</h1>
-        <p data-testid="signed-in" className="mt-4 font-body">
-          {session.username}
-        </p>
-        <dl className="mt-8 grid max-w-3xl grid-cols-2 gap-4 font-body md:grid-cols-4">
+        <dl className="console-stats mt-6">
           <div>
             <dt className="font-mono text-xs uppercase">Devices online</dt>
-            <dd>{board.devicesOnline}</dd>
+            <dd className="font-mono text-2xl">{board.devicesOnline}</dd>
           </div>
           <div>
             <dt className="font-mono text-xs uppercase">Devices offline</dt>
-            <dd>{board.devicesOffline}</dd>
+            <dd className="font-mono text-2xl">{board.devicesOffline}</dd>
           </div>
           <div>
             <dt className="font-mono text-xs uppercase">Users active</dt>
-            <dd>{board.usersActive}</dd>
+            <dd className="font-mono text-2xl">{board.usersActive}</dd>
           </div>
           <div>
             <dt className="font-mono text-xs uppercase">Queue</dt>
-            <dd>
-              {board.queue.queued} queued · {board.queue.held} held
-            </dd>
+            <dd className="font-mono text-2xl">{board.queue.queued}</dd>
+            <p className="font-body text-sm text-ink/70">{board.queue.held} held</p>
           </div>
         </dl>
-        <ul className="mt-6 flex flex-wrap gap-3 font-mono text-sm">
+        <ul className="tape mt-6 font-mono text-sm">
           {board.sims.map((row) => (
-            <li key={row.health}>
-              {row.health} {row.count}
+            <li key={row.health} className="flex items-center justify-between gap-4">
+              <span className="uppercase">{row.health.split("_").join(" ")}</span>
+              <span>{row.count}</span>
             </li>
           ))}
         </ul>

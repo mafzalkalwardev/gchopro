@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 
 function csrf(): string {
   const row = document.cookie.split("; ").find((part) => part.startsWith("__Host-gcho_csrf="));
@@ -8,36 +8,123 @@ function csrf(): string {
 }
 
 const SOURCES = [
-  "existing_customer",
-  "verbal",
-  "written",
-  "web_form",
-  "imported_with_consent",
-  "other",
-];
+  ["existing_customer", "Existing customer"],
+  ["verbal", "Verbal"],
+  ["written", "Written"],
+  ["web_form", "Web form"],
+  ["imported_with_consent", "Imported with consent"],
+  ["other", "Other"],
+] as const;
+
+export type SavedContact = {
+  id: string;
+  name: string;
+  number: string;
+  consentSource: string;
+  consentNote: string | null;
+  consentAt: string | null;
+  tags: string[];
+};
+
+function optedOutNote(): string {
+  const numbers = new URLSearchParams(window.location.search).get("optedOut");
+  if (numbers === null || numbers.length === 0) return "";
+  return `Opted out: ${numbers}`;
+}
+
+function useOptedOutNote(): string {
+  return useSyncExternalStore(
+    () => () => undefined,
+    optedOutNote,
+    () => "",
+  );
+}
+
+async function sendContact(
+  path: string,
+  method: "POST" | "PATCH",
+  body: Record<string, unknown>,
+): Promise<string | null> {
+  const response = await fetch(path, {
+    method,
+    headers: { "content-type": "application/json", "x-csrf-token": csrf() },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const payload = (await response.json()) as { message?: string };
+    return payload.message ?? "The contact was not saved.";
+  }
+  window.location.reload();
+  return null;
+}
+
+function Fields({ contact, numberLocked }: { contact?: SavedContact; numberLocked?: string }) {
+  const number = numberLocked ?? contact?.number ?? "";
+  return (
+    <>
+      <label className="grid gap-1 font-body text-sm">
+        Name
+        <input
+          className="w-full border border-ink bg-paper px-3"
+          name="name"
+          defaultValue={contact?.name ?? ""}
+          autoComplete="name"
+          required
+        />
+      </label>
+      <label className="grid gap-1 font-body text-sm">
+        Number
+        <input
+          className="w-full border border-ink bg-paper px-3 font-mono"
+          name="number"
+          defaultValue={number}
+          readOnly={numberLocked !== undefined}
+          autoComplete="tel"
+          required
+        />
+      </label>
+      <label className="grid gap-1 font-body text-sm">
+        Consent
+        <select
+          className="w-full border border-ink bg-paper px-3"
+          name="consentSource"
+          defaultValue={contact?.consentSource ?? "existing_customer"}
+          required
+        >
+          {SOURCES.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1 font-body text-sm">
+        Consent note
+        <input
+          className="w-full border border-ink bg-paper px-3"
+          name="consentNote"
+          defaultValue={contact?.consentNote ?? ""}
+        />
+      </label>
+    </>
+  );
+}
 
 export function ContactForm() {
   const [error, setError] = useState("");
+  const note = useOptedOutNote();
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/portal/contacts", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-csrf-token": csrf() },
-      body: JSON.stringify({
-        name: String(form.get("name") ?? ""),
-        number: String(form.get("number") ?? ""),
-        consentSource: String(form.get("consentSource") ?? ""),
-        consentNote: String(form.get("consentNote") ?? "") || undefined,
-      }),
+    const noteValue = String(form.get("consentNote") ?? "");
+    const message = await sendContact("/api/portal/contacts", "POST", {
+      name: String(form.get("name") ?? ""),
+      number: String(form.get("number") ?? ""),
+      consentSource: String(form.get("consentSource") ?? ""),
+      consentNote: noteValue.length > 0 ? noteValue : undefined,
     });
-    if (!response.ok) {
-      const payload = (await response.json()) as { message?: string };
-      setError(payload.message ?? "The contact was not saved.");
-      return;
-    }
-    window.location.reload();
+    if (message !== null) setError(message);
   }
 
   async function upload(file: File) {
@@ -51,38 +138,27 @@ export function ContactForm() {
       setError("The file was not imported.");
       return;
     }
-    window.location.reload();
+    const payload = (await response.json()) as { data?: { optedOutNumbers?: string[] } };
+    const numbers = payload.data?.optedOutNumbers ?? [];
+    const next = new URL(window.location.href);
+    if (numbers.length > 0) next.searchParams.set("optedOut", numbers.join(","));
+    else next.searchParams.delete("optedOut");
+    window.location.assign(`${next.pathname}${next.search}`);
   }
 
   return (
     <div className="mt-8 grid max-w-xl gap-8">
-      <form className="grid gap-3" onSubmit={(event) => void save(event)}>
-        <input
-          className="border border-ink/20 bg-paper px-3 py-2"
-          name="name"
-          placeholder="Name"
-          required
-        />
-        <input
-          className="border border-ink/20 bg-paper px-3 py-2 font-mono"
-          name="number"
-          placeholder="Number"
-          required
-        />
-        <select className="border border-ink/20 bg-paper px-3 py-2" name="consentSource" required>
-          {SOURCES.map((source) => (
-            <option key={source} value={source}>
-              {source}
-            </option>
-          ))}
-        </select>
-        <input
-          className="border border-ink/20 bg-paper px-3 py-2"
-          name="consentNote"
-          placeholder="Consent note"
-        />
-        <button className="w-fit border border-ink px-4 py-2 font-body" type="submit">
-          Add contact
+      <form
+        className="grid gap-3"
+        method="post"
+        action="/api/portal/contacts"
+        onSubmit={(event) => void save(event)}
+      >
+        <input type="hidden" name="next" value="/contacts" />
+        <h2 className="font-display text-2xl">Save a contact</h2>
+        <Fields />
+        <button className="mt-1 w-full bg-ink font-body text-paper" type="submit">
+          Save contact
         </button>
       </form>
       <label className="grid gap-2 font-body text-sm">
@@ -96,7 +172,93 @@ export function ContactForm() {
           }}
         />
       </label>
-      {error.length > 0 ? <p className="font-body text-signal">{error}</p> : null}
+      {note.length > 0 ? <p className="font-body text-sm">{note}</p> : null}
+      {error.length > 0 ? <p className="font-body text-sm text-signal">{error}</p> : null}
     </div>
+  );
+}
+
+export function ContactEditor({ contact }: { contact: SavedContact }) {
+  const [error, setError] = useState("");
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const noteValue = String(form.get("consentNote") ?? "");
+    const message = await sendContact(`/api/portal/contacts/${contact.id}`, "PATCH", {
+      name: String(form.get("name") ?? ""),
+      number: String(form.get("number") ?? ""),
+      consentSource: String(form.get("consentSource") ?? ""),
+      consentNote: noteValue.length > 0 ? noteValue : undefined,
+      consentAt: contact.consentAt ?? undefined,
+      tags: contact.tags,
+    });
+    if (message !== null) setError(message);
+  }
+
+  return (
+    <form
+      className="grid gap-3"
+      method="post"
+      action={`/api/portal/contacts/${contact.id}`}
+      onSubmit={(event) => void save(event)}
+    >
+      <input type="hidden" name="next" value="/contacts" />
+      {contact.consentAt ? (
+        <input type="hidden" name="consentAt" value={contact.consentAt} />
+      ) : null}
+      {contact.tags.map((tag) => (
+        <input key={tag} type="hidden" name="tags" value={tag} />
+      ))}
+      <Fields contact={contact} />
+      <button className="mt-1 w-full bg-ink font-body text-paper md:w-fit" type="submit">
+        Save
+      </button>
+      {error.length > 0 ? <p className="font-body text-sm text-signal">{error}</p> : null}
+    </form>
+  );
+}
+
+export function SavePeerContact({
+  number,
+  heading = true,
+  returnTo = "/contacts",
+}: {
+  number: string;
+  heading?: boolean;
+  returnTo?: string;
+}) {
+  const [error, setError] = useState("");
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const noteValue = String(form.get("consentNote") ?? "");
+    const message = await sendContact("/api/portal/contacts", "POST", {
+      name: String(form.get("name") ?? ""),
+      number,
+      consentSource: String(form.get("consentSource") ?? ""),
+      consentNote: noteValue.length > 0 ? noteValue : undefined,
+    });
+    if (message !== null) setError(message);
+  }
+
+  if (number.length === 0) return null;
+
+  return (
+    <form
+      className="mt-4 grid max-w-xl gap-3"
+      method="post"
+      action="/api/portal/contacts"
+      onSubmit={(event) => void save(event)}
+    >
+      <input type="hidden" name="next" value={returnTo} />
+      {heading ? <h2 className="font-display text-2xl">Save contact</h2> : null}
+      <Fields numberLocked={number} />
+      <button className="mt-1 w-full bg-ink font-body text-paper" type="submit">
+        Save contact
+      </button>
+      {error.length > 0 ? <p className="font-body text-sm text-signal">{error}</p> : null}
+    </form>
   );
 }

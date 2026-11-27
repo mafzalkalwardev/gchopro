@@ -98,6 +98,15 @@ describe("csrf", () => {
     ).toBe(true);
     expect(
       csrfRejected({
+        method: "POST",
+        origin: "https://admin.localhost:3001",
+        headerToken: null,
+        cookieToken: "token",
+        expectedHost: "admin.localhost",
+      }),
+    ).toBe(true);
+    expect(
+      csrfRejected({
         method: "GET",
         origin: null,
         headerToken: null,

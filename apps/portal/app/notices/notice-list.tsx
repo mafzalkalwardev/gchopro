@@ -24,9 +24,9 @@ export function NoticeList({
   }
 
   return (
-    <ul className="mt-6 grid gap-4">
+    <ul className="tape mt-6">
       {rows.map((notice) => (
-        <li key={notice.id} className="border border-ink/15 p-4">
+        <li key={notice.id}>
           <h2 className="font-display text-2xl">
             {notice.title}
             {notice.read ? null : (

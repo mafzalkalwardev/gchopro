@@ -69,6 +69,8 @@ await db
       perDay: 300,
       segmentsPerDay: 400,
       maxGroupRecipients: 50,
+      windowStart: "00:00:00",
+      windowEnd: "24:00:00",
     },
     {
       id: veryConservativeId,
@@ -81,6 +83,8 @@ await db
       perDay: 150,
       segmentsPerDay: 400,
       maxGroupRecipients: 50,
+      windowStart: "00:00:00",
+      windowEnd: "24:00:00",
     },
     {
       id: customId,
@@ -93,6 +97,8 @@ await db
       perDay: 300,
       segmentsPerDay: 400,
       maxGroupRecipients: 50,
+      windowStart: "00:00:00",
+      windowEnd: "24:00:00",
     },
   ])
   .onConflictDoNothing();

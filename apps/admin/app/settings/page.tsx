@@ -65,8 +65,8 @@ export default async function SettingsPage() {
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
         <h1 className="font-display text-3xl">{await screenText("settings")}</h1>
-        <LanguageSwitch path="/api/admin/locale" />
-        <ThemeSwitch path="/api/admin/theme" />
+        <LanguageSwitch action="/api/admin/locale" next="/settings" />
+        <ThemeSwitch action="/api/admin/theme" next="/settings" />
         <p className="mt-4 max-w-xl font-body">{POLICY_TEXT}</p>
         <SettingsForms
           health={health}

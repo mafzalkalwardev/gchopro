@@ -23,9 +23,13 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
           {device.status} · {device.online ? "online" : "offline"} ·{" "}
           {device.model ?? "unknown model"}
         </p>
-        <div className="mt-6 grid gap-3">
+        <div className="tape mt-6">
           {device.sims.map((sim) => (
-            <a key={sim.id} href={`/sims/${sim.id}`} className="border border-ink/15 px-4 py-3">
+            <a
+              key={sim.id}
+              href={`/sims/${sim.id}`}
+              className="flex flex-wrap items-center gap-x-3"
+            >
               <span className="font-mono text-xs">Slot {sim.slotIndex}</span>
               <span className="ml-3">{sim.carrierName ?? "Unnamed SIM"}</span>
               <span className="ml-3">{sim.phoneNumber ?? "No number"}</span>

@@ -15,12 +15,12 @@ export default async function InactivePage() {
   if (step === "aup") redirect("/aup");
   if (!session.blocked) redirect("/");
   return (
-    <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <p className="font-mono text-sm text-signal">GChoPro</p>
-      <h1 className="mt-3 font-display text-4xl">{await screenText("inactive")}</h1>
-      <p className="mt-4 max-w-lg font-body">
-        This account cannot send. Contact your administrator.
-      </p>
+    <main className="gate bg-paper text-ink">
+      <section className="w-full max-w-sm border border-ink/15 px-5 py-8 sm:px-8">
+        <p className="font-mono text-sm">GChoPro</p>
+        <h1 className="mt-2 font-display text-4xl">{await screenText("inactive")}</h1>
+        <p className="mt-4 font-body">This account cannot send. Contact your administrator.</p>
+      </section>
     </main>
   );
 }

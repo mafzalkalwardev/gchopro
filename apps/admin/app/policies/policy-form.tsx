@@ -29,8 +29,8 @@ export function PolicyForm() {
         perDay: Number(form.get("perDay")),
         segmentsPerDay: Number(form.get("segmentsPerDay")),
         maxGroupRecipients: Number(form.get("maxGroupRecipients")),
-        windowStart: String(form.get("windowStart") ?? "09:00:00"),
-        windowEnd: String(form.get("windowEnd") ?? "20:00:00"),
+        windowStart: "00:00:00",
+        windowEnd: "24:00:00",
         windowDays: days.length > 0 ? days : [1, 2, 3, 4, 5, 6, 7],
         windowTimezoneMode: "user",
         overLimitAction: String(form.get("overLimitAction") ?? "hold"),
@@ -105,18 +105,6 @@ export function PolicyForm() {
         type="number"
         min={1}
         defaultValue={50}
-        required
-      />
-      <input
-        className="border border-ink/20 bg-paper px-3 py-2 font-mono"
-        name="windowStart"
-        defaultValue="09:00:00"
-        required
-      />
-      <input
-        className="border border-ink/20 bg-paper px-3 py-2 font-mono"
-        name="windowEnd"
-        defaultValue="20:00:00"
         required
       />
       <select className="border border-ink/20 bg-paper px-3 py-2" name="overLimitAction">

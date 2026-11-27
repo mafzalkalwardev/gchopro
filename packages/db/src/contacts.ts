@@ -132,18 +132,17 @@ export async function importContacts(token: string | undefined, csv: string) {
       rejected.push({ row: imported + rejected.length + 2, reason: "invalid_number" });
     }
   }
-  const hashes = parsed.accepted.map((row) => {
+  const candidates: { number: string; hash: string }[] = [];
+  for (const row of parsed.accepted) {
     try {
-      return indexPhone(normalizePhone(row.number, region));
+      const number = normalizePhone(row.number, region);
+      candidates.push({ number, hash: indexPhone(number) });
     } catch {
-      return "";
+      continue;
     }
-  });
-  const flagged = await flaggedOptOuts(
-    session.userId,
-    hashes.filter((hash) => hash.length > 0),
-  );
-  return { imported, rejected, optedOut: flagged };
+  }
+  const optedOutNumbers = await flaggedOptOuts(session.userId, candidates);
+  return { imported, rejected, optedOut: optedOutNumbers.length, optedOutNumbers };
 }
 
 function consentOf(value: string): ContactBody["consentSource"] {
@@ -159,12 +158,15 @@ function consentOf(value: string): ContactBody["consentSource"] {
   return "existing_customer";
 }
 
-async function flaggedOptOuts(userId: string, hashes: string[]): Promise<number> {
-  if (hashes.length === 0) return 0;
-  const rows = await getDb().select({ hash: optOuts.numberHash }).from(optOuts);
-  const known = new Set(rows.filter((row) => hashes.includes(row.hash)).map((row) => row.hash));
+async function flaggedOptOuts(
+  userId: string,
+  rows: { number: string; hash: string }[],
+): Promise<string[]> {
+  if (rows.length === 0) return [];
+  const knownRows = await getDb().select({ hash: optOuts.numberHash }).from(optOuts);
+  const known = new Set(knownRows.map((row) => row.hash));
   void userId;
-  return known.size;
+  return rows.filter((row) => known.has(row.hash)).map((row) => row.number);
 }
 
 export async function listContactGroups(token: string | undefined) {

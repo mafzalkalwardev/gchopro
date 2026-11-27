@@ -13,9 +13,9 @@ export default async function NoticesPage() {
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
         <h1 className="font-display text-4xl">{await screenText("notices")}</h1>
-        <ul className="mt-6 grid gap-4">
+        <ul className="tape mt-6">
           {rows.map((notice) => (
-            <li key={notice.id} className="border border-ink/15 p-4">
+            <li key={notice.id}>
               <h2 className="font-display text-2xl">{notice.title}</h2>
               <p className="mt-2 font-body">{notice.body}</p>
               <p className="mt-2 font-mono text-xs">

@@ -11,9 +11,12 @@ export default async function NoticesPage() {
   const unread = notices.filter((notice) => notice.read !== true).length;
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <p className="font-mono text-sm text-signal">GChoPro</p>
+      <PortalNav unread={unread} username={session.username} userId={session.userId} />
+
+      <p className="font-body text-sm">
+        <a href="/settings">Settings</a>
+      </p>
       <h1 className="mt-3 font-display text-4xl">{await screenText("notices")}</h1>
-      <PortalNav unread={unread} />
       <NoticeList
         notices={notices.map((notice) => ({
           id: notice.id,

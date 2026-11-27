@@ -16,12 +16,12 @@ export default async function CapacityPage() {
           {snapshot.totals.free} free of {snapshot.totals.slots} slots ·{" "}
           {snapshot.totals.usersWithoutSim} users without a SIM
         </p>
-        <ul className="mt-6 grid gap-4">
+        <ul className="tape mt-6">
           {snapshot.devices.map((device) => {
             const width =
               device.slotsOnDevice === 0 ? 0 : (device.activeSims / device.slotsOnDevice) * 100;
             return (
-              <li key={device.deviceId} className="border border-ink/15 p-4">
+              <li key={device.deviceId}>
                 <p className="font-body">{device.name}</p>
                 <div className="mt-3 h-2 bg-ink/10">
                   <div className="h-2 bg-signal" style={{ width: `${Math.min(width, 100)}%` }} />
