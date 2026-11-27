@@ -2,7 +2,7 @@
 
 type: web
 repo: https://github.com/mafzalkalwardev/gchopro
-live:
+live: https://gchopro.induswebagency.com
 
 - [x] 0 intake done
 - [x] 1 docs done

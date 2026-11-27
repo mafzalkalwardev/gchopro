@@ -22,7 +22,7 @@
 ## Paid later
 
 - Hosted Postgres — Compose Postgres is enough until the M8 server runbook.
-- A VPS and a custom domain — GChoPro-PRD.md §25. Not provisioned in M0.
+- The app is on the existing INDUS VPS. Portal `gchopro.induswebagency.com`, admin `gchopro-admin.induswebagency.com`, gateway `gchopro-gw.induswebagency.com`. Nginx owns 80/443. Caddy is not started. A product domain is still later.
 - Sentry or another paid error tracker — pino is the logger. No paid tracker is installed.
 - Paid auth — sessions are custom, per §11 and §18.
 - DeepL or Google Translate — optional providers. Default translation provider is `none` (§26).
