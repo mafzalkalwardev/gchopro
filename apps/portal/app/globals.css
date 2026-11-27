@@ -1,1 +1,89 @@
 @import "@gchopro/config/tailwind.css";
+
+body:has(main.desk) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body:has(main.desk) > footer {
+  max-width: none;
+  flex: none;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+main.desk {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+
+main.desk .messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.inbox-find {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.75rem auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.inbox-find input,
+.inbox-find button {
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  main.desk .messages {
+    overflow: auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .rail {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .rail-account {
+    align-self: end;
+    padding-bottom: 0.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  main.desk .messages {
+    min-height: 0;
+    height: auto;
+  }
+
+  main.desk .messages-list,
+  main.desk .messages-pane {
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+  }
+
+  main.desk .messages-list {
+    overflow: auto;
+    padding-right: 0.75rem;
+    background: color-mix(in srgb, var(--color-ink) 4%, var(--color-paper));
+  }
+
+  main.desk .messages-pane {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}

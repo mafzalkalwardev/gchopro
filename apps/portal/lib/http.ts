@@ -31,6 +31,25 @@ export async function guardCsrf(request: Request, expectedHost: string): Promise
   return apiError("csrf_failed", SAFE_TEXT.csrf_failed, 403);
 }
 
+export async function allowFormPost(
+  request: Request,
+  expectedHost: string,
+): Promise<Response | null> {
+  const jar = await cookies();
+  const cookieToken = jar.get(COOKIE.csrf)?.value ?? "";
+  if (cookieToken.length === 0) return apiError("csrf_failed", SAFE_TEXT.csrf_failed, 403);
+  const origin = request.headers.get("origin");
+  if (origin === null || origin === "null") return null;
+  try {
+    if (new URL(origin).hostname !== expectedHost) {
+      return apiError("csrf_failed", SAFE_TEXT.csrf_failed, 403);
+    }
+  } catch {
+    return apiError("csrf_failed", SAFE_TEXT.csrf_failed, 403);
+  }
+  return null;
+}
+
 export function requestIp(request: Request): string | null {
   const env = loadEnv();
   return clientIp({
@@ -81,4 +100,20 @@ export async function clearSessionCookie(name: string): Promise<void> {
 
 export function caught(error: unknown): Response {
   return apiFromError(error);
+}
+
+export function formRedirect(request: Request, path: string): Response {
+  const header = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") ?? "http";
+  const host =
+    header === null || header.startsWith("0.0.0.0")
+      ? `localhost${header?.slice("0.0.0.0".length) ?? ""}`
+      : header;
+  return Response.redirect(new URL(path, `${proto}://${host}/`), 303);
+}
+
+export function redirectNext(request: Request, form: FormData, fallback: string): Response {
+  const value = form.get("next");
+  const path = typeof value === "string" && /^\/[A-Za-z0-9/_-]*$/u.test(value) ? value : fallback;
+  return formRedirect(request, path);
 }

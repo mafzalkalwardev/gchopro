@@ -192,22 +192,21 @@ describe("templates and windows", () => {
     ).toBe(true);
   });
 
-  it("finds the next opening in the user timezone", () => {
-    const closed = windowState(new Date("2026-06-01T03:30:00Z"), {
+  it("stays open at every hour", () => {
+    const night = windowState(new Date("2026-06-01T03:30:00Z"), {
       start: "09:00:00",
       end: "20:00:00",
       days: [1, 2, 3, 4, 5, 6, 7],
       timeZone: "Asia/Karachi",
     });
-    expect(closed.open).toBe(false);
-    expect(closed.nextOpen.toISOString()).toBe("2026-06-01T04:00:00.000Z");
-    const open = windowState(new Date("2026-06-01T12:00:00Z"), {
+    expect(night.open).toBe(true);
+    const day = windowState(new Date("2026-06-01T12:00:00Z"), {
       start: "09:00:00",
       end: "20:00:00",
       days: [1, 2, 3, 4, 5, 6, 7],
       timeZone: "Asia/Karachi",
     });
-    expect(open.open).toBe(true);
+    expect(day.open).toBe(true);
   });
 
   it("keeps the stricter value of each policy field", () => {

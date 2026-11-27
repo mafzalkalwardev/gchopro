@@ -15,12 +15,12 @@ export default async function ScheduledPage() {
   const rows = await listScheduled(token);
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <p className="font-mono text-sm text-signal">GChoPro</p>
+      <PortalNav unread={unread} username={session.username} userId={session.userId} />
+
       <h1 className="mt-3 font-display text-4xl">{await screenText("scheduled")}</h1>
-      <PortalNav unread={unread} />
-      <ul className="mt-8 max-w-xl space-y-3">
+      <ul className="tape mt-8">
         {rows.messages.map((message) => (
-          <li key={message.id} className="border border-ink/15 px-4 py-3">
+          <li key={message.id}>
             <p className="font-mono text-xs">{message.scheduledFor}</p>
             <p className="mt-2 font-body">{message.body}</p>
             <CancelButton id={message.id} />

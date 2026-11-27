@@ -16,12 +16,12 @@ export default async function GroupSendPage({ params }: { params: Promise<{ id: 
   const progress = await groupProgress(token, id);
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <p className="font-mono text-sm text-signal">GChoPro</p>
+      <PortalNav unread={unread} username={session.username} userId={session.userId} />
+
       <h1 className="mt-3 font-display text-4xl">
         <span className="sr-only">{await screenText("group_send")}</span>
         {progress.name ?? "Group send"}
       </h1>
-      <PortalNav unread={unread} />
       <dl className="mt-8 grid max-w-lg grid-cols-2 gap-3 font-mono text-sm">
         {Object.entries(progress.counts).map(([status, count]) => (
           <div key={status}>

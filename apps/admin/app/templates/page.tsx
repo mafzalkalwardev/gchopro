@@ -16,9 +16,9 @@ export default async function TemplatesPage() {
       <BenchNav username={session.username} />
       <section className="px-6 py-10">
         <h1 className="font-display text-3xl">{await screenText("shared_templates")}</h1>
-        <ul className="mt-8 max-w-xl space-y-3">
+        <ul className="tape mt-8">
           {rows.templates.map((template) => (
-            <li key={template.id} className="border border-ink/15 px-4 py-3">
+            <li key={template.id}>
               <p className="font-body">
                 {template.name} · {template.kind}
               </p>

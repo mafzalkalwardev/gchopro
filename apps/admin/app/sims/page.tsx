@@ -21,7 +21,7 @@ export default async function SimsPage({
       <BenchNav username={session.username} />
       <section className="px-6 py-8">
         <h1 className="font-display text-4xl">{await screenText("sims")}</h1>
-        <form className="mt-4 flex gap-3 font-body text-sm" method="get">
+        <form className="mt-4 flex flex-wrap gap-3 font-body text-sm" method="get">
           <input
             className="border border-ink/20 bg-paper px-3 py-2"
             name="health"

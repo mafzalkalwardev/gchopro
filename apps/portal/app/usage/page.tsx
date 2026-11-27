@@ -19,9 +19,12 @@ export default async function UsagePage() {
   const report = await analyticsSeries({ userId: session.userId, granularity: "day" });
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <p className="font-mono text-sm text-signal">GChoPro</p>
+      <PortalNav unread={unread} username={session.username} userId={session.userId} />
+
+      <p className="font-body text-sm">
+        <a href="/settings">Settings</a>
+      </p>
       <h1 className="mt-3 font-display text-4xl">{await screenText("usage")}</h1>
-      <PortalNav unread={unread} />
       {session.readOnly ? (
         <p className="mt-6 max-w-lg border border-ink/20 px-4 py-3 font-body">
           This subscription is read-only. Sending is turned off. Contact your administrator.
@@ -32,43 +35,43 @@ export default async function UsagePage() {
           This subscription ends in {subscription?.daysLeft} days.
         </p>
       ) : null}
-      <dl className="mt-8 grid max-w-lg gap-3 font-body">
-        <div>
+      <dl className="tape mt-8">
+        <div className="flex items-center justify-between gap-4">
           <dt className="font-mono text-xs uppercase">Status</dt>
-          <dd>{subscription?.status ?? "none"}</dd>
+          <dd className="font-mono">{subscription?.status ?? "none"}</dd>
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <dt className="font-mono text-xs uppercase">Ends</dt>
-          <dd>{subscription?.endsAt.slice(0, 16) ?? "—"}</dd>
+          <dd className="font-mono">{subscription?.endsAt.slice(0, 16) ?? "—"}</dd>
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <dt className="font-mono text-xs uppercase">Days left</dt>
-          <dd>{subscription?.daysLeft ?? 0}</dd>
+          <dd className="font-mono">{subscription?.daysLeft ?? 0}</dd>
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <dt className="font-mono text-xs uppercase">This minute</dt>
-          <dd>
+          <dd className="font-mono">
             {profile.usage.minute}
             {profile.limits ? ` / ${profile.limits.perMinute}` : ""}
           </dd>
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <dt className="font-mono text-xs uppercase">This hour</dt>
-          <dd>
+          <dd className="font-mono">
             {profile.usage.hour}
             {profile.limits ? ` / ${profile.limits.perHour}` : ""}
           </dd>
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <dt className="font-mono text-xs uppercase">Today</dt>
-          <dd>
+          <dd className="font-mono">
             {profile.usage.day}
             {profile.limits ? ` / ${profile.limits.perDay}` : ""}
           </dd>
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <dt className="font-mono text-xs uppercase">Segments today</dt>
-          <dd>
+          <dd className="font-mono">
             {profile.usage.segmentsDay}
             {profile.limits ? ` / ${profile.limits.segmentsPerDay}` : ""}
           </dd>

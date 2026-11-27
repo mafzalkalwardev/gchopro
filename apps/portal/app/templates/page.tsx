@@ -15,12 +15,15 @@ export default async function TemplatesPage() {
   const rows = await listPortalTemplates(token);
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <p className="font-mono text-sm text-signal">GChoPro</p>
+      <PortalNav unread={unread} username={session.username} userId={session.userId} />
+
+      <p className="font-body text-sm">
+        <a href="/settings">Settings</a>
+      </p>
       <h1 className="mt-3 font-display text-4xl">{await screenText("templates")}</h1>
-      <PortalNav unread={unread} />
-      <ul className="mt-8 max-w-xl space-y-4">
+      <ul className="tape mt-8">
         {rows.templates.map((template) => (
-          <li key={template.id} className="border border-ink/15 px-4 py-3">
+          <li key={template.id}>
             <p className="font-body">
               {template.name} · {template.kind}
               {template.shared ? " · shared" : ""}

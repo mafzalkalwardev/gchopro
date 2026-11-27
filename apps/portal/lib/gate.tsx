@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { COOKIE } from "@gchopro/core";
 import { isSessionRecord, readSession, sessionStep, type SessionRecord } from "@gchopro/db";
+import { Mark } from "@/app/mark";
 import { screenText } from "@/lib/copy";
+import { RailLinks } from "@/lib/rail";
 
 export async function requirePortal(): Promise<SessionRecord> {
   const token = (await cookies()).get(COOKIE.portal)?.value;
@@ -15,23 +17,45 @@ export async function requirePortal(): Promise<SessionRecord> {
   return session;
 }
 
-export async function PortalNav({ unread }: { unread: number }) {
+export async function PortalNav({
+  unread,
+  username,
+  userId,
+}: {
+  unread: number;
+  username: string;
+  userId: string;
+}) {
+  const items = [
+    { href: "/", label: await screenText("nav_inbox") },
+    { href: "/contacts", label: await screenText("nav_contacts") },
+    { href: "/groups", label: await screenText("nav_groups") },
+    { href: "/scheduled", label: await screenText("nav_scheduled") },
+    {
+      href: "/settings",
+      label: await screenText("nav_settings"),
+      match: ["/settings", "/templates", "/usage", "/notices"],
+    },
+  ];
   return (
-    <nav className="mt-6 flex flex-wrap gap-4 font-body text-sm">
-      <a href="/">{await screenText("nav_inbox")}</a>
-      <a href="/new">{await screenText("nav_new")}</a>
-      <a href="/contacts">{await screenText("nav_contacts")}</a>
-      <a href="/groups">{await screenText("nav_groups")}</a>
-      <a href="/templates">{await screenText("nav_templates")}</a>
-      <a href="/scheduled">{await screenText("nav_scheduled")}</a>
-      <a href="/usage">{await screenText("nav_usage")}</a>
-      <a href="/settings">{await screenText("nav_settings")}</a>
-      <a href="/notices">
-        {await screenText("nav_notices")}
-        {unread > 0 ? (
-          <span className="ml-2 inline-block h-2 w-2 bg-signal align-middle" aria-label="unread" />
-        ) : null}
-      </a>
-    </nav>
+    <aside className="rail py-6">
+      <p className="flex items-center gap-2 px-3 font-mono text-sm">
+        <Mark />
+        GChoPro
+      </p>
+      <RailLinks items={items} unread={unread} />
+      <div className="rail-account">
+        <p data-testid="signed-in" className="px-3 font-body text-sm">
+          {username}
+        </p>
+        <p
+          data-testid="user-id"
+          className="truncate px-3 font-mono text-xs text-ink/60"
+          title={userId}
+        >
+          {userId}
+        </p>
+      </div>
+    </aside>
   );
 }

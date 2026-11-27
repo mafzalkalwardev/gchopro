@@ -43,7 +43,7 @@ export function SessionWatch() {
   }, []);
 
   return (
-    <p data-testid="sse" className="mt-4 font-mono text-sm">
+    <p data-testid="sse" className="sr-only">
       {state}
     </p>
   );

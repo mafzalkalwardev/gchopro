@@ -30,34 +30,36 @@ export default function PasswordPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <h1 className="font-display text-3xl">{screenCopy(locale, "admin_password")}</h1>
-      <form className="mt-6 grid max-w-sm gap-3" onSubmit={onSubmit}>
-        <label className="grid gap-1 font-body text-sm">
-          Current password
-          <input
-            className="border border-ink bg-paper px-3 py-2"
-            name="current"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        <label className="grid gap-1 font-body text-sm">
-          New password
-          <input
-            className="border border-ink bg-paper px-3 py-2"
-            name="next"
-            type="password"
-            autoComplete="new-password"
-            required
-          />
-        </label>
-        <button className="bg-ink px-3 py-2 font-body text-paper" type="submit">
-          Change password
-        </button>
-        {message.length > 0 ? <p className="font-body text-sm text-signal">{message}</p> : null}
-      </form>
+    <main className="gate bg-paper text-ink">
+      <section className="w-full max-w-sm border border-ink/15 px-5 py-8 sm:px-8">
+        <h1 className="font-display text-3xl">{screenCopy(locale, "admin_password")}</h1>
+        <form className="mt-6 grid gap-3" onSubmit={onSubmit}>
+          <label className="grid gap-1 font-body text-sm">
+            Current password
+            <input
+              className="w-full border border-ink bg-paper px-3"
+              name="current"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          <label className="grid gap-1 font-body text-sm">
+            New password
+            <input
+              className="w-full border border-ink bg-paper px-3"
+              name="next"
+              type="password"
+              autoComplete="new-password"
+              required
+            />
+          </label>
+          <button className="mt-1 w-full bg-ink font-body text-paper" type="submit">
+            Change password
+          </button>
+          {message.length > 0 ? <p className="font-body text-sm text-signal">{message}</p> : null}
+        </form>
+      </section>
     </main>
   );
 }

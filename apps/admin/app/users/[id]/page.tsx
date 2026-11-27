@@ -27,7 +27,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
             {user.displayName}
           </h1>
           <a
-            className="border border-ink px-3 py-2 font-body text-sm"
+            className="inline-flex min-h-11 items-center border border-ink px-3 font-body text-sm"
             href={`/users/${user.id}/edit`}
           >
             Edit
@@ -35,7 +35,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
         </div>
         {support ? (
           <p className="mt-4 font-body">
-            <a className="underline" href={`/users/${user.id}/support`}>
+            <a className="inline-flex min-h-11 items-center" href={`/users/${user.id}/support`}>
               {await screenText("support")}
             </a>
           </p>

@@ -32,15 +32,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const locale = await currentLocale();
   const theme = await themeClass();
   return (
-    <html lang={locale} className={theme}>
-      <body
-        className={`${display.variable} ${body.variable} ${mono.variable} bg-paper font-body text-ink antialiased`}
-      >
-        <LocaleProvider locale={locale}>
+    <html
+      lang={locale}
+      className={`${theme} ${display.variable} ${body.variable} ${mono.variable}`}
+    >
+      <body className="bg-paper font-body text-ink antialiased">
+        <LocaleProvider locale={locale} dark={theme === "dark"}>
           {children}
           <InstallPortal />
         </LocaleProvider>
-        <footer className="px-6 py-8 font-body text-sm text-ink/70">{POLICY_TEXT}</footer>
+        <footer className="max-w-3xl px-6 py-6 font-body text-sm leading-6 text-ink/60">
+          {POLICY_TEXT}
+        </footer>
       </body>
     </html>
   );

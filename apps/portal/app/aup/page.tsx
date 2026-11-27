@@ -29,17 +29,21 @@ export default function AupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <h1 className="font-display text-3xl">{screenCopy(locale, "aup")}</h1>
-      <p className="mt-4 max-w-xl font-body">{TERMS}</p>
-      <button
-        className="mt-6 bg-ink px-3 py-2 font-body text-paper"
-        type="button"
-        onClick={() => void accept()}
-      >
-        Accept
-      </button>
-      {message.length > 0 ? <p className="mt-3 font-body text-sm text-signal">{message}</p> : null}
+    <main className="gate bg-paper text-ink">
+      <section className="w-full max-w-lg border border-ink/15 px-5 py-8 sm:px-8">
+        <h1 className="font-display text-3xl">{screenCopy(locale, "aup")}</h1>
+        <p className="mt-4 font-body">{TERMS}</p>
+        <button
+          className="mt-6 w-full bg-ink font-body text-paper"
+          type="button"
+          onClick={() => void accept()}
+        >
+          Accept
+        </button>
+        {message.length > 0 ? (
+          <p className="mt-3 font-body text-sm text-signal">{message}</p>
+        ) : null}
+      </section>
     </main>
   );
 }

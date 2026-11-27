@@ -1,1 +1,236 @@
 @import "@gchopro/config/tailwind.css";
+
+body.console {
+  --gw-bar: #ffffff;
+  --gw-nav: #ffffff;
+  --gw-page: #f8f9fa;
+  --gw-line: #dadce0;
+  --gw-muted: #5f6368;
+  --gw-blue: #1a73e8;
+  --gw-blue-bg: #e8f0fe;
+  --gw-blue-text: #1967d2;
+  --color-ink: #202124;
+  --color-paper: #ffffff;
+  --color-signal: #1a73e8;
+  background: var(--gw-page);
+  color: #202124;
+}
+
+html.dark body.console {
+  --gw-bar: #292a2d;
+  --gw-nav: #292a2d;
+  --gw-page: #202124;
+  --gw-line: #3c4043;
+  --gw-muted: #9aa0a6;
+  --gw-blue: #8ab4f8;
+  --gw-blue-bg: #394457;
+  --gw-blue-text: #8ab4f8;
+  --color-ink: #e8eaed;
+  --color-paper: #292a2d;
+  --color-signal: #8ab4f8;
+  background: var(--gw-page);
+  color: #e8eaed;
+}
+
+body.console h1,
+body.console h2,
+body.console h3 {
+  font-family: var(--font-body), "Segoe UI", sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+body.console h1 {
+  font-size: 1.375rem;
+  line-height: 1.4;
+}
+
+body.console h2 {
+  font-size: 1.125rem;
+}
+
+body.console button.bg-ink {
+  border-radius: 4px;
+  background: var(--gw-blue);
+  color: #fff;
+}
+
+body.console .console-top {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4rem;
+  padding: 0 1.25rem;
+  background: var(--gw-bar);
+  border-bottom: 1px solid var(--gw-line);
+}
+
+body.console .console-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  color: var(--color-ink);
+  font-size: 1.375rem;
+  text-decoration: none;
+}
+
+body.console .console-glyph {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 4px;
+  background: var(--gw-blue);
+}
+
+body.console .console-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  color: var(--color-ink);
+  font-size: 0.875rem;
+}
+
+body.console .console-avatar {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--gw-blue);
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+body.console .rail {
+  background: var(--gw-nav);
+  border-bottom: 1px solid var(--gw-line);
+}
+
+body.console .console-fold > summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  margin-right: 0.75rem;
+  padding: 0 1rem 0 1.5rem;
+  border-radius: 0 1.5rem 1.5rem 0;
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+body.console .console-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+body.console .console-fold > summary::after {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-left: auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+body.console .console-fold[open] > summary::after {
+  transform: rotate(45deg);
+}
+
+body.console .console-link {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  margin-right: 0.75rem;
+  padding: 0 1rem 0 1.5rem;
+  border-radius: 0 1.5rem 1.5rem 0;
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+body.console .console-link-nested {
+  padding-left: 2.25rem;
+}
+
+body.console .console-link-current {
+  background: var(--gw-blue-bg);
+  color: var(--gw-blue-text);
+  font-weight: 500;
+}
+
+body.console main:has(.rail) {
+  background: var(--gw-page);
+  padding-top: 4rem;
+}
+
+body.console .console-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  max-width: 56rem;
+}
+
+body.console .console-stats > div {
+  padding: 1rem 1.25rem;
+  background: var(--gw-bar);
+  border: 1px solid var(--gw-line);
+  border-radius: 8px;
+}
+
+body.console main section {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+body.console table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  background: var(--gw-bar);
+  border: 1px solid var(--gw-line);
+  border-radius: 8px;
+}
+
+body.console > footer {
+  color: var(--gw-muted);
+  font-size: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  body.console .rail {
+    top: 4rem;
+    bottom: 0;
+    left: 0;
+    width: 16rem;
+    padding-top: 0.5rem;
+    border-right: 1px solid var(--gw-line);
+    border-bottom: 0;
+  }
+
+  body.console main:has(.rail) {
+    padding-left: 16rem;
+  }
+
+  body.console:has(.rail) > footer {
+    margin-left: 16rem;
+    padding-left: 1.5rem;
+  }
+
+  body.console .console-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  body.console .rail {
+    position: static;
+    width: auto;
+  }
+}
